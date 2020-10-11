@@ -1,0 +1,122 @@
+---
+title: "Exploratory Data Analysis, Colorado"
+author: "Albert Sun"
+date: "9/30/2020"
+output: html_document
+---
+
+```{r message=FALSE}
+library(tidyverse)
+library(patchwork)
+```
+
+```{r global options, echo=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r read data}
+colorado <- read_csv("HB19-1297Data.csv")
+```
+
+# 1. Check Proportion Missing
+# 2. Check Class
+
+```{r glimpse at the data}
+glimpse(colorado)
+```
+Correct Qtr, because Qtr represents periodic stages of data collection, not a continuous value.
+
+```{r}
+colorado <- colorado %>%
+  mutate(Qtr = as.factor(Qtr))
+```
+
+The other variables seem to have the correct data type
+
+# 3. Investigate Missingness
+
+# 4. EDA
+
+```{r}
+colorado %>%
+  count(JMS) %>%
+  arrange(-n) %>%
+  mutate(n = n / 5) %>%
+  slice(1:8) %>%
+  ggplot(aes(x = reorder(JMS, -n), y = n)) + 
+  geom_bar(stat = "identity") + 
+  labs(x = "Jail Management System",
+       y = "Count",
+       title = "Top 8 utilized jail management systems in Colorado")
+```
+
+
+```{r}
+colorado_population <- colorado %>%
+  arrange(Qtr) %>%
+  group_by(Qtr) %>%
+  summarise(Total = sum(Total)) 
+
+colorado_population
+
+ggplot(colorado_population, aes(x = Qtr, y = Total)) + 
+  geom_point() + 
+  labs(x = "2020 Quarter",
+       y = "Total Jail Population",
+       title = "Colorado jail population has significantly reduced during COVID-19") + 
+  ylim(0, 200000) + 
+  geom_line()
+```
+
+```{r Jail Population Distribution}
+# facet version
+
+colorado_dist <- colorado %>%
+  group_by(County, Qtr) %>%
+  summarise(Total = sum(Total))
+
+colorado_dist %>%
+  ggplot(aes(x = Total)) + 
+  geom_histogram() + 
+  facet_grid(Qtr ~ .) + 
+  labs(title = "Distribution of Colorado Jail Size (by Population) in different
+Quarters",
+       y = "Count",
+       x = "Jail Population")
+```
+
+
+Unimodal, right-skewed distribution with significant outliers on the right of the
+graph
+
+```{r List the Jails with the Largest Populations}
+colorado_dist %>%
+  filter(Total > 20000) %>%
+  distinct(County)
+```
+
+The largest jails in Colorado are the Adams, Arapahoe, and El Paso County Jails.
+
+```{r Distribution Statistics}
+total_summary <- colorado_dist %>%
+  summarise(mean_total = mean(Total),
+    sd_total = sd(Total),
+    median_total = median(Total),
+    IQR_total = IQR(Total))
+
+total_summary
+```
+
+Ideas:
+
+RQ: Is there a difference between the proportion of people released from COVID-19 between races? Gender?
+
+- ANova means to asess whether there's been a significant change due to COVID-19
+
+- Look at Legalization, COVID-19, COVID-19 on Race
+
+- How do I research whether having a larger percentage of Black people made jails more/less likely to release people?
+
+- Add judiciary political, national political, county political (assembly member elected)
+
+- ggmap
