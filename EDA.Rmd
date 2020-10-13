@@ -1,11 +1,15 @@
 ---
-title: "Exploratory Data Analysis, Colorado"
+title: "Colorado: Exploratory Data Analysis and Linear Regression"
 author: "Albert Sun"
 date: "9/30/2020"
-output: html_document
+output: pdf_document
 ---
 
-```{r message=FALSE}
+```{r global options, echo=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo=FALSE)
+```
+
+```{r}
 library(tidyverse)
 library(patchwork)
 library(janitor)
@@ -13,9 +17,15 @@ library(broom)
 library(knitr)
 ```
 
-```{r global options, echo=FALSE}
-knitr::opts_chunk$set(warning=FALSE, message=FALSE)
-```
+# The Dataset
+
+**Open-source:** Overall, the HB 19-1297 data set is the only statewide jail database that offers an open source ".csv" file for the public to see. Even California and Texas don't have their data published completely open source; instead, researchers are forced to scrape the data periodically from the state website. As such, we find that the HB-1297 data set to be the most friendly for public use thus far.
+
+**Collection periods:** This dataset represents 3 collection periods in 2020, split up into quarters. Q1 was in January, Q2 was in April, Q3 was in July. A frequent periodic collection of data, like quarterly, lends the dataset to really good data analysis, because we can better see the effects of policies or huge events (hint hint COVID-19) over time.
+
+**Columns:** The 23 columns represent variables: the quarter, the year, county jail, jail management system, etc.
+
+**Rows:** The 2280 rows generally reflect specific jail information per each quarter; however, the reason why there are 2280 rows instead of 152 rows (the number of jails times three quarters in Colorado) is because each jail has 15 rows separated into different areas of measurement, i.e. "Number of inmates", "Sentenced", etc. 
 
 ```{r read data}
 colorado <- read_csv("HB19-1297Data.csv") %>%
@@ -23,14 +33,6 @@ colorado <- read_csv("HB19-1297Data.csv") %>%
 
 glimpse(colorado)
 ```
-
-# Overall Comments
-
-Overall, the HB 19-1297 data set is the only statewide jail database that offers an open source ".csv" file for the public to see. Even other states who do collect jail population data, like California and Texas, don't have their data published completely open source; instead, researchers are forced to scrape the data periodically from their website. As such, we find that the HB-1297 data set to be the most reproducible thus far.
-
-The 23 columns represent variables: the quarter, the year, county jail, jail management system, etc.
-
-The 2280 rows generally reflect specific jail information per each quarter; however, the reason why there are 2280 rows instead of 152 rows (the number of jails times three quarters in Colorado) is because each jail has 15 rows separated into different areas of measurement, i.e. "Number of inmates", "Sentenced", etc. In more-technical SQL terms, it seems like the measure column was cross joined with jail column. 
 
 # 1. Check Proportion Missing
 
@@ -78,13 +80,26 @@ colorado <- colorado %>%
 colorado %>%
   count(qtr, isNA) %>%
   filter(isNA == TRUE)
-
-colorado
 ```
 
 Missingness was generally reduced throughout the three quarters of jail data collection in 2020, possibly suggesting improvements in jail collection throughout this time period.
 
 # 4. EDA
+
+```{r}
+colorado_population <- colorado %>%
+  arrange(qtr) %>%
+  group_by(qtr) %>%
+  summarise(total = sum(total)) 
+
+colorado_population %>%
+  ggplot(aes(x = qtr, y = total)) + 
+  geom_point() + 
+  labs(x = "Quarter",
+       y = "Total amount of people incarcerated in jail") + 
+  ggtitle("Colorado jail population has reduced during COVID-19")
+```
+As you can see, Colorado jail population has significantly reduced during COVID-19.
 
 ```{r}
 colorado %>%
@@ -98,18 +113,6 @@ colorado %>%
        y = "Count",
        title = "Top 8 utilized jail management systems in Colorado")
 ```
-
-
-```{r}
-colorado_population <- colorado %>%
-  arrange(qtr) %>%
-  group_by(qtr) %>%
-  summarise(total = sum(total)) 
-
-colorado_population
-```
-
-As you can see, Colorado jail population has significantly reduced during COVID-19. 
 
 ```{r Jail Population Distribution}
 # facet version
@@ -151,6 +154,10 @@ total_summary
 
 # 5. Linear Regression
 
+In statistics, linear regression is a linear approach to modeling the relationship between a scalar response (or dependent variable) and one or more explanatory variables (or independent variables). 
+
+One question we are trying to ask is to see which predictors are significant to whether a jail would on net release people during COVID-19. Let's fit a linear model about that.
+
 ```{r}
 colorado_num_inmates <- colorado %>%
   filter(measure == "Number of inmates")
@@ -167,8 +174,6 @@ Let's focus on only quarter 1 and 3:
 colorado_num_inmates <- colorado %>%
   filter(measure == "Number of inmates") %>%
   filter(qtr == 1 | qtr == 3)
-
-colorado_num_inmates
 ```
 
 ```{r}
@@ -179,33 +184,34 @@ colorado_num_inmates %>%
 Remove 4 jails that don't have both first and third quarter: Grand, Huerfano, Las Animas, Saguache
 
 ```{r}
-colorado_num_inmates <- colorado_num_inmates %>%
+selected_colorado_num_inmates <- colorado_num_inmates %>%
   filter(county != "Grand" & 
            county != "Huerfano" &
            county != "Las Animas" &
-           county != "Saguache") %>%
+           county != "Saguache" & 
+           county != "Jackson" & 
+           county != "Routt") 
+
+selected_colorado_num_inmates <- selected_colorado_num_inmates %>%
   select(-c(not_available, isNA, jms, qtr_year, measure, deaths, 
             other_gender, 
             bookings, releases)) %>%
   mutate(other_race = unknown_race + other_race) %>%
   select(-c(unknown_race)) %>%
   arrange(county)
-
-colorado_num_inmates
 ```
 
-
-Pivot_wider;
+Pivot_wider:
 
 ```{r}
-colorado_num_inmates <- colorado_num_inmates %>% 
+selected_colorado_num_inmates <- selected_colorado_num_inmates %>% 
   pivot_wider(names_from = qtr, values_from = capacity:unknown_ethnicity) 
 ```
 
 Standardize total, race, gender, ethnicity to percentages:
 
 ```{r}
-colorado_num_inmates <- colorado_num_inmates %>%
+selected_colorado_num_inmates <- selected_colorado_num_inmates %>%
   mutate(difference = (total_3 - total_1)/total_1) %>%
   mutate(male_percent = male_1 / total_1) %>%
   mutate(white_percent = white_1 / total_1) %>%
@@ -216,11 +222,9 @@ colorado_num_inmates <- colorado_num_inmates %>%
   mutate(hispanic_percent = hispanic_1 / total_1) %>%
   mutate(unknown_ethnicity_percent = unknown_ethnicity_1 / total_1) %>%
   select(county, difference:unknown_ethnicity_percent)
-
-colorado_num_inmates
 ```
 
-```{r}
+```{r include=FALSE}
 full_model <- lm(difference ~ 
                     male_percent +
                     white_percent + 
@@ -230,14 +234,62 @@ full_model <- lm(difference ~
                     non_hispanic_percent + 
                     hispanic_percent + 
                     unknown_ethnicity_percent, 
-                  data = colorado_num_inmates)
+                  data = selected_colorado_num_inmates)
 
-int_only_model <- lm(difference ~ 1, data = colorado_num_inmates)
+int_only_model <- lm(difference ~ 1, data = selected_colorado_num_inmates)
 
 covid_model <- step(full_model, scope = formula(int_only_model), direction = "backward")
+
 ```
 
-Based on backwards AIC selection, we will use the model with male_percent, black_percent, non_hispanic_percent.
+Based on backwards AIC selection, we will use the model with white_percent, hispanic_percent.
+
+```{r}
+covid_model_aug <- augment(covid_model) %>%
+  mutate(obs_num = row_number())
+```
+
+```{r}
+resid_point <- ggplot(data = covid_model_aug, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "Red") +
+  labs(x = "Predicted",
+  y = "Residual",
+  title = "Residuals vs. Predicted")
+
+resid_hist <- ggplot(data = covid_model_aug, aes(x = .resid)) +
+  geom_histogram(bins = 10) +
+  labs(x = "Residuals",
+    y = "Count",
+    title = "Distribution of Residuals")
+
+resid_qq <- ggplot(data = covid_model_aug, aes(sample = .resid)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Normal QQ-plot of residuals",
+    y = "Sample",
+    x = "Theoretical")
+
+resid_point / (resid_hist + resid_qq)
+```
+
+Linearity, Constant Variance, Normality, and Independence are satisfied.
+
+```{r}
+resid_fitted <- ggplot(data = covid_model_aug, aes(x = .fitted, y = .std.resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red") +
+  labs(x = "Predicted values",
+  y = "Standard Residuals",
+  title = "Check high leverage points") +
+  geom_text(aes(label=ifelse(abs(.std.resid) > 2,
+  as.character(obs_num), "")), nudge_x = 0) +
+  geom_hline(yintercept =c(-2,2), color = "blue", lty = 2) +
+  geom_hline(yintercept =c(-3,3), color = "red", lty = 2)
+
+resid_fitted
+```
+Removed Jackson and Routt earlier b/c super small population totals/outliers resulted in skewed numbers and skewed model.
 
 ```{r}
 covid_model %>%
@@ -245,20 +297,33 @@ covid_model %>%
   kable(digits = 3)
 ```
 
-To interpret this:
+$$percent change-hat = 0.218 * white percent - 0.456 * hispanicpercent - 0.393$$
 
-- All else held constant, with every percentage increase in the amount of males in a jail, we expect there to be a 6% decrease in jail population from Q1 to Q3.	
+Interpretation: 
 
-- All else held constant, with every percentage increase in the amount of black people in a jail, we expect there to be a 3% decrease in jail population from Q1 to Q3.	
+1. There is a positive relationship between the % of hispanic people in a jail and the jail increasing its net population. All else held constant, with every percentage increase in the amount of hispanic people in a jail, we expect there to be a 0.5% decrease in jail population from 2020 Q1 to Q3.	
 
-- All else held constant, with every percentage increase in the amount of non-hispanic people in a jail, we expect there to be a 2% increase in jail population from Q1 to Q3.
+2. There is a positive relationship between the percentage of white people in a jail and the jail increasing its net population. All else held constant, with every percentage increase in the amount of white people in a jail, we expect there to be a 0.2% increase in jail population from 2020 Q1 to Q3.	
 
+# Future:
 
-Comments: 
+- Collect and add data on political leanings of counties (judiciary, national, county)
 
-- didn't check model conditions yet
+- ggmap() to create a spatial visualization to represent the counties that decreased the jail population counts the most
 
-- LOOK AT DISCHARGE
+- Look at the race percentage changes themselves to see whether there are disparities in the people being released during COVID-19
+
+- Look at gender
+
+- Look at other predictor variables: beds, capacity, etc.
+
+- Look at intake and outtake #'s themselves
+
+- See which jails increased capacity and beds over time
+
+- Analyze death counts possibly
+
+# Comments: 
 
 - This doesn't look at the "after" numbers for any of the predictor variables (race, gender, ethnicity). Another thing we can do in the future is analyze the difference between races over time.
 
@@ -272,16 +337,8 @@ Comments:
 
 - make helper functions to streamline the creation of other regression models
 
-Ideas:
-
-RQ: Is there a difference between the proportion of people released from COVID-19 between races? Gender?
-
 - ANova means to asess whether there's been a significant change due to COVID-19
 
 - Look at Legalization, COVID-19, COVID-19 on Race
 
 - How do I research whether having a larger percentage of Black people made jails more/less likely to release people?
-
-- Add judiciary political, national political, county political (assembly member elected)
-
-- ggmap
