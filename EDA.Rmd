@@ -8,42 +8,91 @@ output: html_document
 ```{r message=FALSE}
 library(tidyverse)
 library(patchwork)
+library(janitor)
+library(broom)
+library(knitr)
 ```
 
 ```{r global options, echo=FALSE}
-knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
 ```{r read data}
-colorado <- read_csv("HB19-1297Data.csv")
+colorado <- read_csv("HB19-1297Data.csv") %>%
+  clean_names()
+
+glimpse(colorado)
 ```
 
+# Overall Comments
+
+Overall, the HB 19-1297 data set is the only statewide jail database that offers an open source ".csv" file for the public to see. Even other states who do collect jail population data, like California and Texas, don't have their data published completely open source; instead, researchers are forced to scrape the data periodically from their website. As such, we find that the HB-1297 data set to be the most reproducible thus far.
+
+The 23 columns represent variables: the quarter, the year, county jail, jail management system, etc.
+
+The 2280 rows generally reflect specific jail information per each quarter; however, the reason why there are 2280 rows instead of 152 rows (the number of jails times three quarters in Colorado) is because each jail has 15 rows separated into different areas of measurement, i.e. "Number of inmates", "Sentenced", etc. In more-technical SQL terms, it seems like the measure column was cross joined with jail column. 
+
 # 1. Check Proportion Missing
+
+Instead of leaving blank values in missing columns, the Colorado HB 19-1297 jail dataset uses the `not_available` column to annotate and comment on missingness. They add `0` to a datapoint that is missing. Thus, because we cannot use conventional functions like is.na() to detect missingness, we will take a look at the jail observations that contain missing data. 
+
+Here are the 10 most common NA messages.
+
+```{r}
+colorado %>% 
+  count(not_available) %>%
+  group_by(not_available) %>%
+  arrange(-n) %>%
+  ungroup %>%
+  slice(1:10)
+```
+
+Out of 2280 rows, there are `r 2280 - 1792` (2280-1792) rows with some sort of `not_available` message. 
+
+This means that `r 448 / 2280 * 100`% of the data has some sort of `not_available` message to it, which is relatively low.
+
+Most of the data exists, and almost all jails at least provide some sort of ethnicity data. Most of the data that is missing is that for specific measures as aforementioned above, a jail's JMS (Jail Management System) might not break down types of sentences by gender, race, or ethnicity. When conducting data analysis on race and gender for some particular measures, it will be a good idea to remove these rows, or at least account for them. 
+
 # 2. Check Class
+
+Check class of data:
 
 ```{r glimpse at the data}
 glimpse(colorado)
 ```
-Correct Qtr, because Qtr represents periodic stages of data collection, not a continuous value.
+Judging from the datatypes above, we will change Qtr to become a factor variable, because Qtr represents periodic stages of data collection, not a continuous value.
 
 ```{r}
 colorado <- colorado %>%
-  mutate(Qtr = as.factor(Qtr))
+  mutate(qtr = as.factor(qtr))
 ```
 
-The other variables seem to have the correct data type
+Overall, the other variables seem to have the correct data type.
 
 # 3. Investigate Missingness
+
+```{r}
+colorado <- colorado %>% 
+  mutate(isNA = !is.na(not_available)) 
+
+colorado %>%
+  count(qtr, isNA) %>%
+  filter(isNA == TRUE)
+
+colorado
+```
+
+Missingness was generally reduced throughout the three quarters of jail data collection in 2020, possibly suggesting improvements in jail collection throughout this time period.
 
 # 4. EDA
 
 ```{r}
 colorado %>%
-  count(JMS) %>%
+  count(jms) %>%
   arrange(-n) %>%
   mutate(n = n / 5) %>%
   slice(1:8) %>%
-  ggplot(aes(x = reorder(JMS, -n), y = n)) + 
+  ggplot(aes(x = reorder(jms, -n), y = n)) + 
   geom_bar(stat = "identity") + 
   labs(x = "Jail Management System",
        y = "Count",
@@ -53,59 +102,175 @@ colorado %>%
 
 ```{r}
 colorado_population <- colorado %>%
-  arrange(Qtr) %>%
-  group_by(Qtr) %>%
-  summarise(Total = sum(Total)) 
+  arrange(qtr) %>%
+  group_by(qtr) %>%
+  summarise(total = sum(total)) 
 
 colorado_population
-
-ggplot(colorado_population, aes(x = Qtr, y = Total)) + 
-  geom_point() + 
-  labs(x = "2020 Quarter",
-       y = "Total Jail Population",
-       title = "Colorado jail population has significantly reduced during COVID-19") + 
-  ylim(0, 200000) + 
-  geom_line()
 ```
+
+As you can see, Colorado jail population has significantly reduced during COVID-19. 
 
 ```{r Jail Population Distribution}
 # facet version
 
 colorado_dist <- colorado %>%
-  group_by(County, Qtr) %>%
-  summarise(Total = sum(Total))
+  group_by(county, qtr) %>%
+  summarise(total = sum(total))
 
 colorado_dist %>%
-  ggplot(aes(x = Total)) + 
-  geom_histogram() + 
-  facet_grid(Qtr ~ .) + 
+  ggplot(aes(x = total)) + 
+  geom_histogram(bins = 50) + 
+  facet_grid(qtr ~ .) + 
   labs(title = "Distribution of Colorado Jail Size (by Population) in different
 Quarters",
        y = "Count",
        x = "Jail Population")
 ```
 
-
-Unimodal, right-skewed distribution with significant outliers on the right of the
-graph
+The population per jail throughout Colorado is Unimodal, right-skewed distribution with significant outliers on the right of the
+graph.
 
 ```{r List the Jails with the Largest Populations}
 colorado_dist %>%
-  filter(Total > 20000) %>%
-  distinct(County)
+  filter(total > 20000) %>%
+  distinct(county)
 ```
 
 The largest jails in Colorado are the Adams, Arapahoe, and El Paso County Jails.
 
 ```{r Distribution Statistics}
 total_summary <- colorado_dist %>%
-  summarise(mean_total = mean(Total),
-    sd_total = sd(Total),
-    median_total = median(Total),
-    IQR_total = IQR(Total))
+  summarise(mean_total = mean(total),
+    sd_total = sd(total),
+    median_total = median(total),
+    IQR_total = IQR(total))
 
 total_summary
 ```
+
+# 5. Linear Regression
+
+```{r}
+colorado_num_inmates <- colorado %>%
+  filter(measure == "Number of inmates")
+
+colorado_num_inmates %>%
+  filter(county == "Pitkin" | county == "Pueblo")
+```
+
+Since only two jails (Pitkin and Pueblo) don't offer information on ethnicity or race for the measure of number of total inmates in only one of their quarters, this data, focused on ethnicity counts per county, is mostly complete for modelling. We'll remove these numbers
+
+Let's focus on only quarter 1 and 3:
+
+```{r}
+colorado_num_inmates <- colorado %>%
+  filter(measure == "Number of inmates") %>%
+  filter(qtr == 1 | qtr == 3)
+
+colorado_num_inmates
+```
+
+```{r}
+colorado_num_inmates %>%
+  count(county) %>%
+  filter(n == 1)
+```
+Remove 4 jails that don't have both first and third quarter: Grand, Huerfano, Las Animas, Saguache
+
+```{r}
+colorado_num_inmates <- colorado_num_inmates %>%
+  filter(county != "Grand" & 
+           county != "Huerfano" &
+           county != "Las Animas" &
+           county != "Saguache") %>%
+  select(-c(not_available, isNA, jms, qtr_year, measure, deaths, 
+            other_gender, 
+            bookings, releases)) %>%
+  mutate(other_race = unknown_race + other_race) %>%
+  select(-c(unknown_race)) %>%
+  arrange(county)
+
+colorado_num_inmates
+```
+
+
+Pivot_wider;
+
+```{r}
+colorado_num_inmates <- colorado_num_inmates %>% 
+  pivot_wider(names_from = qtr, values_from = capacity:unknown_ethnicity) 
+```
+
+Standardize total, race, gender, ethnicity to percentages:
+
+```{r}
+colorado_num_inmates <- colorado_num_inmates %>%
+  mutate(difference = (total_3 - total_1)/total_1) %>%
+  mutate(male_percent = male_1 / total_1) %>%
+  mutate(white_percent = white_1 / total_1) %>%
+  mutate(black_percent = black_1 / total_1) %>%
+  mutate(native_percent = native_american_1 / total_1) %>%
+  mutate(other_race_percent = other_race_1 / total_1) %>%
+  mutate(non_hispanic_percent = non_hispanic_1 / total_1) %>%
+  mutate(hispanic_percent = hispanic_1 / total_1) %>%
+  mutate(unknown_ethnicity_percent = unknown_ethnicity_1 / total_1) %>%
+  select(county, difference:unknown_ethnicity_percent)
+
+colorado_num_inmates
+```
+
+```{r}
+full_model <- lm(difference ~ 
+                    male_percent +
+                    white_percent + 
+                    black_percent + 
+                    native_percent + 
+                    other_race_percent + 
+                    non_hispanic_percent + 
+                    hispanic_percent + 
+                    unknown_ethnicity_percent, 
+                  data = colorado_num_inmates)
+
+int_only_model <- lm(difference ~ 1, data = colorado_num_inmates)
+
+covid_model <- step(full_model, scope = formula(int_only_model), direction = "backward")
+```
+
+Based on backwards AIC selection, we will use the model with male_percent, black_percent, non_hispanic_percent.
+
+```{r}
+covid_model %>%
+  tidy %>%
+  kable(digits = 3)
+```
+
+To interpret this:
+
+- All else held constant, with every percentage increase in the amount of males in a jail, we expect there to be a 6% decrease in jail population from Q1 to Q3.	
+
+- All else held constant, with every percentage increase in the amount of black people in a jail, we expect there to be a 3% decrease in jail population from Q1 to Q3.	
+
+- All else held constant, with every percentage increase in the amount of non-hispanic people in a jail, we expect there to be a 2% increase in jail population from Q1 to Q3.
+
+
+Comments: 
+
+- didn't check model conditions yet
+
+- LOOK AT DISCHARGE
+
+- This doesn't look at the "after" numbers for any of the predictor variables (race, gender, ethnicity). Another thing we can do in the future is analyze the difference between races over time.
+
+- are the race variables independent enough? 
+
+- try looking at which race percentage decreases the most
+
+- look at bed increases or decreases
+
+- look at capacity changes
+
+- make helper functions to streamline the creation of other regression models
 
 Ideas:
 
