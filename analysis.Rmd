@@ -28,7 +28,7 @@ library(knitr)
 **Rows:** The 2280 rows generally reflect specific jail information per each quarter; however, the reason why there are 2280 rows instead of 152 rows (the number of jails times three quarters in Colorado) is because each jail has 15 rows separated into different areas of measurement, i.e. "Number of inmates", "Sentenced", etc. 
 
 ```{r read data}
-colorado <- read_csv("HB19-1297Data.csv") %>%
+colorado <- read_csv("data/HB19-1297Data.csv") %>%
   clean_names()
 
 glimpse(colorado)
