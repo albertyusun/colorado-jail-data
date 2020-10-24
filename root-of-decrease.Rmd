@@ -1,0 +1,38 @@
+---
+title: "Root of Decrease"
+author: "Albert Sun"
+date: "10/24/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+hb <- read_csv("HB19-1297Data.csv") %>%
+  clean_names()
+pop <- read_csv("colorado-population.csv")
+```
+
+```{r}
+pop <- pop %>%
+  filter(County != "Total") %>%
+  mutate(County = str_sub(County, 2, -18))
+
+pop
+```
+
+```{r}
+hb <- inner_join(hb, pop, by = c("county" = "County"))
+hb
+```
+
+```{r}
+hb_num_inmates <- hb %>%
+  filter(measure == "Number of inmates") %>%
+  filter(qtr == 1 | qtr == 3)
+
+hb_num_inmates
+```
+

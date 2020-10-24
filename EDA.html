@@ -831,14 +831,14 @@ covid_model &lt;- step(full_model, scope = formula(int_only_model), direction = 
 </table>
 <p>To interpret this:</p>
 <ul>
-<li><p>All else held constant, with every percent increase in the amount of males in a jail, we expect there to be a 5.947% decrease in jail population from Q1 to Q3.</p></li>
-<li><p>All else held constant, with every percent increase in the amount of black people in a jail, we expect there to be a 2.553% decrease in jail population from Q1 to Q3.<br />
-</p></li>
-<li><p>All else held constant, with every percent increase in the amount of non-hispanic people in a jail, we expect there to be a 1.810% increase in jail population from Q1 to Q3.</p></li>
+<li><p>All else held constant, with every percentage increase in the amount of males in a jail, we expect there to be a 6% decrease in jail population from Q1 to Q3.</p></li>
+<li><p>All else held constant, with every percentage increase in the amount of black people in a jail, we expect there to be a 3% decrease in jail population from Q1 to Q3.</p></li>
+<li><p>All else held constant, with every percentage increase in the amount of non-hispanic people in a jail, we expect there to be a 2% increase in jail population from Q1 to Q3.</p></li>
 </ul>
 <p>Comments:</p>
 <ul>
 <li><p>didn’t check model conditions yet</p></li>
+<li><p>LOOK AT DISCHARGE</p></li>
 <li><p>This doesn’t look at the “after” numbers for any of the predictor variables (race, gender, ethnicity). Another thing we can do in the future is analyze the difference between races over time.</p></li>
 <li><p>are the race variables independent enough?</p></li>
 <li><p>try looking at which race percentage decreases the most</p></li>

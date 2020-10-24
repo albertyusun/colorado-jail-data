@@ -2,7 +2,9 @@
 title: "Exploratory Data Analysis, Colorado"
 author: "Albert Sun"
 date: "9/30/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r message=FALSE}
@@ -20,6 +22,13 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```{r read data}
 colorado <- read_csv("HB19-1297Data.csv") %>%
   clean_names()
+
+pop <- read_csv("colorado-population.csv")
+
+pop <- pop %>%
+  filter(County != "Total") %>%
+  mutate(County = str_sub(County, 2, -18))
+
 
 glimpse(colorado)
 ```
@@ -202,10 +211,19 @@ colorado_num_inmates <- colorado_num_inmates %>%
   pivot_wider(names_from = qtr, values_from = capacity:unknown_ethnicity) 
 ```
 
+```{r}
+colorado_num_inmates <- inner_join(colorado_num_inmates, pop, by = c("county" = "County")) %>%
+  mutate(type = if_else(Population < 2500, "R", 
+                        if_else(Population < 50000, "UC", "UA")))
+
+colorado_num_inmates
+```
+
+
 Standardize total, race, gender, ethnicity to percentages:
 
 ```{r}
-colorado_num_inmates <- colorado_num_inmates %>%
+colorado_num_percent <- colorado_num_inmates %>%
   mutate(difference = (total_3 - total_1)/total_1) %>%
   mutate(male_percent = male_1 / total_1) %>%
   mutate(white_percent = white_1 / total_1) %>%
@@ -215,24 +233,20 @@ colorado_num_inmates <- colorado_num_inmates %>%
   mutate(non_hispanic_percent = non_hispanic_1 / total_1) %>%
   mutate(hispanic_percent = hispanic_1 / total_1) %>%
   mutate(unknown_ethnicity_percent = unknown_ethnicity_1 / total_1) %>%
-  select(county, difference:unknown_ethnicity_percent)
+  select(county, difference, male_percent, black_percent, hispanic_percent, type)
 
-colorado_num_inmates
+colorado_num_percent
 ```
 
 ```{r}
 full_model <- lm(difference ~ 
-                    male_percent +
-                    white_percent + 
-                    black_percent + 
-                    native_percent + 
-                    other_race_percent + 
-                    non_hispanic_percent + 
-                    hispanic_percent + 
-                    unknown_ethnicity_percent, 
-                  data = colorado_num_inmates)
+                    male_percent + 
+                   black_percent +
+                   hispanic_percent + 
+                   type, 
+                  data = colorado_num_percent)
 
-int_only_model <- lm(difference ~ 1, data = colorado_num_inmates)
+int_only_model <- lm(difference ~ 1, data = colorado_num_percent)
 
 covid_model <- step(full_model, scope = formula(int_only_model), direction = "backward")
 ```
@@ -241,9 +255,74 @@ Based on backwards AIC selection, we will use the model with male_percent, black
 
 ```{r}
 covid_model %>%
-  tidy %>%
+  tidy(conf.int = TRUE) %>%
   kable(digits = 3)
 ```
+
+We are 95% confident that a overall percent increase in male inmates in a jail will result in between a 0.5% to 1.1% decrease in jail population. 
+
+We are 95% confident that a overall percent increase in Hispanic inmates in a jail will result in between a 0.1% to 0.7% decrease in jail population. 
+
+We are 95% confident that an Urbanized Area will result in between a 7.190% to 8.052% decrease in jail population compared to Rural county. 
+
+We are 95% confident that an Urbanized Cluster will result in between a 7.074% to 7.926% decrease in jail population compared to Rural county. 
+
+### Not Percent model
+
+```{r}
+colorado_num <- colorado_num_inmates %>%
+  mutate(difference = (total_3 - total_1)) %>%
+  mutate(male = male_1) %>%
+  mutate(white = white_1) %>%
+  mutate(black = black_1) %>%
+  mutate(native = native_american_1) %>%
+  mutate(other_race = other_race_1) %>%
+  mutate(non_hispanic = non_hispanic_1) %>%
+  mutate(hispanic = hispanic_1) %>%
+  mutate(unknown_ethnicity = unknown_ethnicity_1) %>%
+  select(county, difference, male, black, hispanic)
+
+colorado_num
+```
+
+```{r merge}
+colorado_num <- inner_join(colorado_num, pop, by = c("county" = "County")) %>%
+  mutate(type = if_else(Population < 2500, "R", 
+                        if_else(Population < 50000, "UC", "UA")))
+```
+
+Urban or rural: https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html
+
+```{r}
+full_model <- lm(difference ~ 
+                    male +
+                    black +  
+                    hispanic + 
+                   type, 
+                  data = colorado_num)
+
+full_model %>%
+  tidy(conf.int = TRUE) %>%
+  kable(digits = 3)
+
+int_only_model <- lm(difference ~ 1, data = colorado_num)
+
+covid_model1 <- step(full_model, scope = formula(int_only_model), direction = "backward")
+
+covid_model1 %>%
+  tidy(conf.int = TRUE) %>%
+  kable(digits = 3)
+```
+
+There is a statistically significant relationship between releases and males, releases and black population, releases and hispanic populations.
+
+THe more 
+
+
+
+
+
+
 
 To interpret this:
 

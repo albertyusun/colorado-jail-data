@@ -1,0 +1,816 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Exploratory Data Analysis, Colorado},
+  pdfauthor={Albert Sun},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs}
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+
+\title{Exploratory Data Analysis, Colorado}
+\author{Albert Sun}
+\date{9/30/2020}
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\KeywordTok{library}\NormalTok{(patchwork)}
+\KeywordTok{library}\NormalTok{(janitor)}
+\KeywordTok{library}\NormalTok{(broom)}
+\KeywordTok{library}\NormalTok{(knitr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado <-}\StringTok{ }\KeywordTok{read_csv}\NormalTok{(}\StringTok{"HB19-1297Data.csv"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{clean_names}\NormalTok{()}
+
+\KeywordTok{glimpse}\NormalTok{(colorado)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 2,280
+## Columns: 23
+## $ qtr_year          <dbl> 2020, 2020, 2020, 2020, 2020, 2020, 2020, 2020, 2...
+## $ qtr               <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1...
+## $ county            <chr> "Clear Creek", "Clear Creek", "Clear Creek", "Cle...
+## $ jms               <chr> "E-Force", "E-Force", "E-Force", "E-Force", "E-Fo...
+## $ capacity          <dbl> 105, 105, 105, 105, 105, 105, 105, 105, 105, 105,...
+## $ beds              <dbl> 105, 105, 105, 105, 105, 105, 105, 105, 105, 105,...
+## $ deaths            <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ bookings          <dbl> 253, 253, 253, 253, 253, 253, 253, 253, 253, 253,...
+## $ releases          <dbl> 183, 183, 183, 183, 183, 183, 183, 183, 183, 183,...
+## $ measure           <chr> "Number of inmates", "Sentenced", "Unsentenced - ...
+## $ total             <dbl> 70.0, 2.0, 4.0, 64.0, 53.0, 11.0, 3.0, 5.0, 2.0, ...
+## $ male              <dbl> 62, 2, 4, 56, 46, 10, 2, 5, 2, 78, 118, 194, 85, ...
+## $ female            <dbl> 8, 0, 0, 8, 7, 1, 1, 0, 0, 14, 93, 46, 128, 115, ...
+## $ other_gender      <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ black             <dbl> 10, 1, 1, 8, 8, 0, 1, 2, 0, 12, 19, 23, 26, 27, 0...
+## $ native_american   <dbl> 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6,...
+## $ other_race        <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0...
+## $ white             <dbl> 58, 1, 2, 55, 44, 11, 2, 3, 2, 76, 0, 205, 13, 56...
+## $ unknown_race      <dbl> 2.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.3,...
+## $ non_hispanic      <dbl> 43, 2, 2, 39, 31, 8, 2, 5, 2, 56, 178, 161, 16, 4...
+## $ hispanic          <dbl> 20, 0, 2, 18, 16, 2, 1, 0, 0, 30, 227, 56, 6, 97,...
+## $ unknown_ethnicity <dbl> 7, 0, 0, 7, 6, 1, 0, 0, 0, 6, 46, 23, 10, 85, 0, ...
+## $ not_available     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...
+\end{verbatim}
+
+\hypertarget{overall-comments}{%
+\section{Overall Comments}\label{overall-comments}}
+
+Overall, the HB 19-1297 data set is the only statewide jail database
+that offers an open source ``.csv'' file for the public to see. Even
+other states who do collect jail population data, like California and
+Texas, don't have their data published completely open source; instead,
+researchers are forced to scrape the data periodically from their
+website. As such, we find that the HB-1297 data set to be the most
+reproducible thus far.
+
+The 23 columns represent variables: the quarter, the year, county jail,
+jail management system, etc.
+
+The 2280 rows generally reflect specific jail information per each
+quarter; however, the reason why there are 2280 rows instead of 152 rows
+(the number of jails times three quarters in Colorado) is because each
+jail has 15 rows separated into different areas of measurement,
+i.e.~``Number of inmates'', ``Sentenced'', etc. In more-technical SQL
+terms, it seems like the measure column was cross joined with jail
+column.
+
+\hypertarget{check-proportion-missing}{%
+\section{1. Check Proportion Missing}\label{check-proportion-missing}}
+
+Instead of leaving blank values in missing columns, the Colorado HB
+19-1297 jail dataset uses the \texttt{not\_available} column to annotate
+and comment on missingness. They add \texttt{0} to a datapoint that is
+missing. Thus, because we cannot use conventional functions like is.na()
+to detect missingness, we will take a look at the jail observations that
+contain missing data.
+
+Here are the 10 most common NA messages.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{count}\NormalTok{(not_available) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(not_available) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{arrange}\NormalTok{(}\OperatorTok{-}\NormalTok{n) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{ungroup }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{slice}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 10 x 2
+##    not_available                                                               n
+##    <chr>                                                                   <int>
+##  1  <NA>                                                                    1792
+##  2 "Eforce does not seprate this data"                                        18
+##  3 "JMS does not calculate this"                                              18
+##  4 "ESTIMATES"                                                                13
+##  5 "This is not tracked in our system"                                        13
+##  6 "My JMS doesn't break unsentenced inmates by Gender or Race/Ethnicity."    12
+##  7 "Not able to capture information"                                          11
+##  8 "JMS does not currently break down \"sentenced\" by gender/race/ethnic~    10
+##  9 "Not able to caputre information"                                          10
+## 10 "Population down due to COVID-19"                                          10
+\end{verbatim}
+
+Out of 2280 rows, there are 488 (2280-1792) rows with some sort of
+\texttt{not\_available} message.
+
+This means that 19.6491228\% of the data has some sort of
+\texttt{not\_available} message to it, which is relatively low.
+
+Most of the data exists, and almost all jails at least provide some sort
+of ethnicity data. Most of the data that is missing is that for specific
+measures as aforementioned above, a jail's JMS (Jail Management System)
+might not break down types of sentences by gender, race, or ethnicity.
+When conducting data analysis on race and gender for some particular
+measures, it will be a good idea to remove these rows, or at least
+account for them.
+
+\hypertarget{check-class}{%
+\section{2. Check Class}\label{check-class}}
+
+Check class of data:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{glimpse}\NormalTok{(colorado)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 2,280
+## Columns: 23
+## $ qtr_year          <dbl> 2020, 2020, 2020, 2020, 2020, 2020, 2020, 2020, 2...
+## $ qtr               <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1...
+## $ county            <chr> "Clear Creek", "Clear Creek", "Clear Creek", "Cle...
+## $ jms               <chr> "E-Force", "E-Force", "E-Force", "E-Force", "E-Fo...
+## $ capacity          <dbl> 105, 105, 105, 105, 105, 105, 105, 105, 105, 105,...
+## $ beds              <dbl> 105, 105, 105, 105, 105, 105, 105, 105, 105, 105,...
+## $ deaths            <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ bookings          <dbl> 253, 253, 253, 253, 253, 253, 253, 253, 253, 253,...
+## $ releases          <dbl> 183, 183, 183, 183, 183, 183, 183, 183, 183, 183,...
+## $ measure           <chr> "Number of inmates", "Sentenced", "Unsentenced - ...
+## $ total             <dbl> 70.0, 2.0, 4.0, 64.0, 53.0, 11.0, 3.0, 5.0, 2.0, ...
+## $ male              <dbl> 62, 2, 4, 56, 46, 10, 2, 5, 2, 78, 118, 194, 85, ...
+## $ female            <dbl> 8, 0, 0, 8, 7, 1, 1, 0, 0, 14, 93, 46, 128, 115, ...
+## $ other_gender      <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ black             <dbl> 10, 1, 1, 8, 8, 0, 1, 2, 0, 12, 19, 23, 26, 27, 0...
+## $ native_american   <dbl> 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6,...
+## $ other_race        <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0...
+## $ white             <dbl> 58, 1, 2, 55, 44, 11, 2, 3, 2, 76, 0, 205, 13, 56...
+## $ unknown_race      <dbl> 2.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.3,...
+## $ non_hispanic      <dbl> 43, 2, 2, 39, 31, 8, 2, 5, 2, 56, 178, 161, 16, 4...
+## $ hispanic          <dbl> 20, 0, 2, 18, 16, 2, 1, 0, 0, 30, 227, 56, 6, 97,...
+## $ unknown_ethnicity <dbl> 7, 0, 0, 7, 6, 1, 0, 0, 0, 6, 46, 23, 10, 85, 0, ...
+## $ not_available     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...
+\end{verbatim}
+
+Judging from the datatypes above, we will change Qtr to become a factor
+variable, because Qtr represents periodic stages of data collection, not
+a continuous value.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado <-}\StringTok{ }\NormalTok{colorado }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{qtr =} \KeywordTok{as.factor}\NormalTok{(qtr))}
+\end{Highlighting}
+\end{Shaded}
+
+Overall, the other variables seem to have the correct data type.
+
+\hypertarget{investigate-missingness}{%
+\section{3. Investigate Missingness}\label{investigate-missingness}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado <-}\StringTok{ }\NormalTok{colorado }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{isNA =} \OperatorTok{!}\KeywordTok{is.na}\NormalTok{(not_available)) }
+
+\NormalTok{colorado }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{(qtr, isNA) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(isNA }\OperatorTok{==}\StringTok{ }\OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 3
+##   qtr   isNA      n
+##   <fct> <lgl> <int>
+## 1 1     TRUE    170
+## 2 2     TRUE    162
+## 3 3     TRUE    156
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 2,280 x 24
+##    qtr_year qtr   county jms   capacity  beds deaths bookings releases measure
+##       <dbl> <fct> <chr>  <chr>    <dbl> <dbl>  <dbl>    <dbl>    <dbl> <chr>  
+##  1     2020 1     Clear~ E-Fo~      105   105      0      253      183 Number~
+##  2     2020 1     Clear~ E-Fo~      105   105      0      253      183 Senten~
+##  3     2020 1     Clear~ E-Fo~      105   105      0      253      183 Unsent~
+##  4     2020 1     Clear~ E-Fo~      105   105      0      253      183 Unsent~
+##  5     2020 1     Clear~ E-Fo~      105   105      0      253      183 Unsent~
+##  6     2020 1     Clear~ E-Fo~      105   105      0      253      183 Unsent~
+##  7     2020 1     Clear~ E-Fo~      105   105      0      253      183 Munici~
+##  8     2020 1     Clear~ E-Fo~      105   105      0      253      183 Admini~
+##  9     2020 1     Clear~ E-Fo~      105   105      0      253      183 Compet~
+## 10     2020 1     Clear~ E-Fo~      105   105      0      253      183 Averag~
+## # ... with 2,270 more rows, and 14 more variables: total <dbl>, male <dbl>,
+## #   female <dbl>, other_gender <dbl>, black <dbl>, native_american <dbl>,
+## #   other_race <dbl>, white <dbl>, unknown_race <dbl>, non_hispanic <dbl>,
+## #   hispanic <dbl>, unknown_ethnicity <dbl>, not_available <chr>, isNA <lgl>
+\end{verbatim}
+
+Missingness was generally reduced throughout the three quarters of jail
+data collection in 2020, possibly suggesting improvements in jail
+collection throughout this time period.
+
+\hypertarget{eda}{%
+\section{4. EDA}\label{eda}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{(jms) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{arrange}\NormalTok{(}\OperatorTok{-}\NormalTok{n) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{n =}\NormalTok{ n }\OperatorTok{/}\StringTok{ }\DecValTok{5}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{slice}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{8}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{reorder}\NormalTok{(jms, }\OperatorTok{-}\NormalTok{n), }\DataTypeTok{y =}\NormalTok{ n)) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x =} \StringTok{"Jail Management System"}\NormalTok{,}
+       \DataTypeTok{y =} \StringTok{"Count"}\NormalTok{,}
+       \DataTypeTok{title =} \StringTok{"Top 8 utilized jail management systems in Colorado"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{EDA_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado_population <-}\StringTok{ }\NormalTok{colorado }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{arrange}\NormalTok{(qtr) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(qtr) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{total =} \KeywordTok{sum}\NormalTok{(total)) }
+
+\NormalTok{colorado_population}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 2
+##   qtr     total
+##   <fct>   <dbl>
+## 1 1     182537.
+## 2 2     161983.
+## 3 3     149324.
+\end{verbatim}
+
+As you can see, Colorado jail population has significantly reduced
+during COVID-19.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# facet version}
+
+\NormalTok{colorado_dist <-}\StringTok{ }\NormalTok{colorado }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(county, qtr) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{total =} \KeywordTok{sum}\NormalTok{(total))}
+
+\NormalTok{colorado_dist }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ total)) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{50}\NormalTok{) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(qtr }\OperatorTok{~}\StringTok{ }\NormalTok{.) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"Distribution of Colorado Jail Size (by Population) in different}
+\StringTok{Quarters"}\NormalTok{,}
+       \DataTypeTok{y =} \StringTok{"Count"}\NormalTok{,}
+       \DataTypeTok{x =} \StringTok{"Jail Population"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{EDA_files/figure-latex/Jail Population Distribution-1.pdf}
+
+The population per jail throughout Colorado is Unimodal, right-skewed
+distribution with significant outliers on the right of the graph.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado_dist }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(total }\OperatorTok{>}\StringTok{ }\DecValTok{20000}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{distinct}\NormalTok{(county)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 1
+## # Groups:   county [3]
+##   county  
+##   <chr>   
+## 1 Adams   
+## 2 Arapahoe
+## 3 El Paso
+\end{verbatim}
+
+The largest jails in Colorado are the Adams, Arapahoe, and El Paso
+County Jails.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{total_summary <-}\StringTok{ }\NormalTok{colorado_dist }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{mean_total =} \KeywordTok{mean}\NormalTok{(total),}
+    \DataTypeTok{sd_total =} \KeywordTok{sd}\NormalTok{(total),}
+    \DataTypeTok{median_total =} \KeywordTok{median}\NormalTok{(total),}
+    \DataTypeTok{IQR_total =} \KeywordTok{IQR}\NormalTok{(total))}
+
+\NormalTok{total_summary}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 53 x 5
+##    county      mean_total sd_total median_total IQR_total
+##    <chr>            <dbl>    <dbl>        <dbl>     <dbl>
+##  1 Adams           21225   2613.         21784     2568. 
+##  2 Alamosa           241     71.1          279       63  
+##  3 Arapahoe        21274   2593.         22393     2406. 
+##  4 Baca              212.    23.7          216.      23.5
+##  5 Bent              590.   200.           554      198. 
+##  6 Boulder          8862.   924.          9089.     903. 
+##  7 Broomfield        550.   109.           541      109  
+##  8 Chaffee           382      1.73         381        1.5
+##  9 Clear Creek      1219.   308.          1114      294. 
+## 10 Conejos           194.    66.7          180       65.5
+## # ... with 43 more rows
+\end{verbatim}
+
+\hypertarget{linear-regression}{%
+\section{5. Linear Regression}\label{linear-regression}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado_num_inmates <-}\StringTok{ }\NormalTok{colorado }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(measure }\OperatorTok{==}\StringTok{ "Number of inmates"}\NormalTok{)}
+
+\NormalTok{colorado_num_inmates }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(county }\OperatorTok{==}\StringTok{ "Pitkin"} \OperatorTok{|}\StringTok{ }\NormalTok{county }\OperatorTok{==}\StringTok{ "Pueblo"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 6 x 24
+##   qtr_year qtr   county jms   capacity  beds deaths bookings releases measure
+##      <dbl> <fct> <chr>  <chr>    <dbl> <dbl>  <dbl>    <dbl>    <dbl> <chr>  
+## 1     2020 1     Pueblo Spil~      780   509      0     1901     1843 Number~
+## 2     2020 1     Pitkin SPIL~       30    32      1      173        0 Number~
+## 3     2020 2     Pueblo Spil~      780   509      0     1889     2143 Number~
+## 4     2020 2     Pitkin SPIL~       30    32      0       99       98 Number~
+## 5     2020 3     Pitkin spil~       30    32      0       43       37 Number~
+## 6     2020 3     Pueblo Spil~      780   509      0     1157     1213 Number~
+## # ... with 14 more variables: total <dbl>, male <dbl>, female <dbl>,
+## #   other_gender <dbl>, black <dbl>, native_american <dbl>, other_race <dbl>,
+## #   white <dbl>, unknown_race <dbl>, non_hispanic <dbl>, hispanic <dbl>,
+## #   unknown_ethnicity <dbl>, not_available <chr>, isNA <lgl>
+\end{verbatim}
+
+Since only two jails (Pitkin and Pueblo) don't offer information on
+ethnicity or race for the measure of number of total inmates in only one
+of their quarters, this data, focused on ethnicity counts per county, is
+mostly complete for modelling. We'll remove these numbers
+
+Let's focus on only quarter 1 and 3:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado_num_inmates <-}\StringTok{ }\NormalTok{colorado }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(measure }\OperatorTok{==}\StringTok{ "Number of inmates"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(qtr }\OperatorTok{==}\StringTok{ }\DecValTok{1} \OperatorTok{|}\StringTok{ }\NormalTok{qtr }\OperatorTok{==}\StringTok{ }\DecValTok{3}\NormalTok{)}
+
+\NormalTok{colorado_num_inmates}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 100 x 24
+##    qtr_year qtr   county jms   capacity  beds deaths bookings releases measure
+##       <dbl> <fct> <chr>  <chr>    <dbl> <dbl>  <dbl>    <dbl>    <dbl> <chr>  
+##  1     2020 1     Clear~ E-Fo~      105   105      0      253      183 Number~
+##  2     2020 1     Park   Jail~      255   200      0      199      191 Number~
+##  3     2020 1     Eagle  Inte~      112   112      0      366      377 Number~
+##  4     2020 1     El Pa~ Beac~     1837  1837      1     5161     5356 Number~
+##  5     2020 1     Logan  New ~      120   120      0     1748     1731 Number~
+##  6     2020 1     Baca   None        26    26      0       34       30 Number~
+##  7     2020 1     San M~ Spil~       32    32      0       55       66 Number~
+##  8     2020 1     Gunni~ Omni~       85    85      0      647      655 Number~
+##  9     2020 1     Monte~ Efor~      104   104      0      517      495 Number~
+## 10     2020 1     Pueblo Spil~      780   509      0     1901     1843 Number~
+## # ... with 90 more rows, and 14 more variables: total <dbl>, male <dbl>,
+## #   female <dbl>, other_gender <dbl>, black <dbl>, native_american <dbl>,
+## #   other_race <dbl>, white <dbl>, unknown_race <dbl>, non_hispanic <dbl>,
+## #   hispanic <dbl>, unknown_ethnicity <dbl>, not_available <chr>, isNA <lgl>
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado_num_inmates }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{(county) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(n }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 2
+##   county         n
+##   <chr>      <int>
+## 1 Grand          1
+## 2 Huerfano       1
+## 3 Las Animas     1
+## 4 Saguache       1
+\end{verbatim}
+
+Remove 4 jails that don't have both first and third quarter: Grand,
+Huerfano, Las Animas, Saguache
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado_num_inmates <-}\StringTok{ }\NormalTok{colorado_num_inmates }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(county }\OperatorTok{!=}\StringTok{ "Grand"} \OperatorTok{&}\StringTok{ }
+\StringTok{           }\NormalTok{county }\OperatorTok{!=}\StringTok{ "Huerfano"} \OperatorTok{&}
+\StringTok{           }\NormalTok{county }\OperatorTok{!=}\StringTok{ "Las Animas"} \OperatorTok{&}
+\StringTok{           }\NormalTok{county }\OperatorTok{!=}\StringTok{ "Saguache"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\KeywordTok{c}\NormalTok{(not_available, isNA, jms, qtr_year, measure, deaths, }
+\NormalTok{            other_gender, }
+\NormalTok{            bookings, releases)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{other_race =}\NormalTok{ unknown_race }\OperatorTok{+}\StringTok{ }\NormalTok{other_race) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\KeywordTok{c}\NormalTok{(unknown_race)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{arrange}\NormalTok{(county)}
+
+\NormalTok{colorado_num_inmates}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 96 x 14
+##    qtr   county capacity  beds total  male female black native_american
+##    <fct> <chr>     <dbl> <dbl> <dbl> <dbl>  <dbl> <dbl>           <dbl>
+##  1 1     Adams      1271  1678   956   787    169   124               2
+##  2 3     Adams      1271  1678   600   536     64    76               0
+##  3 3     Alamo~      163    36    36    31      5     0               0
+##  4 1     Alamo~      163    72    72    58     14     0               0
+##  5 1     Arapa~     1174  1468  1115   948    167   354               4
+##  6 3     Arapa~     1174  1468   628   574     53   197               5
+##  7 1     Baca         26    26     7     6      1     2               0
+##  8 3     Baca         26    26     6     6      0     1               0
+##  9 1     Bent         62    58    47    37     10     2               0
+## 10 3     Bent         96    96    29    25      4     2               0
+## # ... with 86 more rows, and 5 more variables: other_race <dbl>, white <dbl>,
+## #   non_hispanic <dbl>, hispanic <dbl>, unknown_ethnicity <dbl>
+\end{verbatim}
+
+Pivot\_wider;
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado_num_inmates <-}\StringTok{ }\NormalTok{colorado_num_inmates }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{pivot_wider}\NormalTok{(}\DataTypeTok{names_from =}\NormalTok{ qtr, }\DataTypeTok{values_from =}\NormalTok{ capacity}\OperatorTok{:}\NormalTok{unknown_ethnicity) }
+\end{Highlighting}
+\end{Shaded}
+
+Standardize total, race, gender, ethnicity to percentages:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colorado_num_inmates <-}\StringTok{ }\NormalTok{colorado_num_inmates }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{difference =}\NormalTok{ (total_}\DecValTok{3} \OperatorTok{-}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{)}\OperatorTok{/}\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{male_percent =}\NormalTok{ male_}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{white_percent =}\NormalTok{ white_}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{black_percent =}\NormalTok{ black_}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{native_percent =}\NormalTok{ native_american_}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{other_race_percent =}\NormalTok{ other_race_}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{non_hispanic_percent =}\NormalTok{ non_hispanic_}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{hispanic_percent =}\NormalTok{ hispanic_}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{unknown_ethnicity_percent =}\NormalTok{ unknown_ethnicity_}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{total_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(county, difference}\OperatorTok{:}\NormalTok{unknown_ethnicity_percent)}
+
+\NormalTok{colorado_num_inmates}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 48 x 10
+##    county difference male_percent white_percent black_percent native_percent
+##    <chr>       <dbl>        <dbl>         <dbl>         <dbl>          <dbl>
+##  1 Adams      -0.372        0.823         0.859        0.130         0.00209
+##  2 Alamo~     -0.5          0.806         1            0             0      
+##  3 Arapa~     -0.437        0.850         0.662        0.317         0.00359
+##  4 Baca       -0.143        0.857         0.714        0.286         0      
+##  5 Bent       -0.383        0.787         0.957        0.0426        0      
+##  6 Bould~     -0.442        0.87          0.89         0.0775        0.015  
+##  7 Broom~     -0.549        0.820         0.680        0.0492        0.00820
+##  8 Chaff~     -0.545        0.788         0.742        0.0303        0      
+##  9 Clear~     -0.186        0.886         0.829        0.143         0      
+## 10 Conej~     -0.831        0.723         0.985        0.0154        0      
+## # ... with 38 more rows, and 4 more variables: other_race_percent <dbl>,
+## #   non_hispanic_percent <dbl>, hispanic_percent <dbl>,
+## #   unknown_ethnicity_percent <dbl>
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{full_model <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(difference }\OperatorTok{~}\StringTok{ }
+\StringTok{                    }\NormalTok{male_percent }\OperatorTok{+}
+\StringTok{                    }\NormalTok{white_percent }\OperatorTok{+}\StringTok{ }
+\StringTok{                    }\NormalTok{black_percent }\OperatorTok{+}\StringTok{ }
+\StringTok{                    }\NormalTok{native_percent }\OperatorTok{+}\StringTok{ }
+\StringTok{                    }\NormalTok{other_race_percent }\OperatorTok{+}\StringTok{ }
+\StringTok{                    }\NormalTok{non_hispanic_percent }\OperatorTok{+}\StringTok{ }
+\StringTok{                    }\NormalTok{hispanic_percent }\OperatorTok{+}\StringTok{ }
+\StringTok{                    }\NormalTok{unknown_ethnicity_percent, }
+                  \DataTypeTok{data =}\NormalTok{ colorado_num_inmates)}
+
+\NormalTok{int_only_model <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(difference }\OperatorTok{~}\StringTok{ }\DecValTok{1}\NormalTok{, }\DataTypeTok{data =}\NormalTok{ colorado_num_inmates)}
+
+\NormalTok{covid_model <-}\StringTok{ }\KeywordTok{step}\NormalTok{(full_model, }\DataTypeTok{scope =} \KeywordTok{formula}\NormalTok{(int_only_model), }\DataTypeTok{direction =} \StringTok{"backward"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Start:  AIC=2.06
+## difference ~ male_percent + white_percent + black_percent + native_percent + 
+##     other_race_percent + non_hispanic_percent + hispanic_percent + 
+##     unknown_ethnicity_percent
+## 
+##                             Df Sum of Sq    RSS     AIC
+## - white_percent              1    0.0364 34.473  0.1103
+## - other_race_percent         1    0.1694 34.606  0.2951
+## - hispanic_percent           1    0.5553 34.992  0.8274
+## - unknown_ethnicity_percent  1    1.0781 35.514  1.5393
+## - native_percent             1    1.2244 35.661  1.7366
+## <none>                                   34.436  2.0596
+## - black_percent              1    2.4623 36.899  3.3746
+## - non_hispanic_percent       1    7.5093 41.945  9.5282
+## - male_percent               1   16.2631 50.699 18.6262
+## 
+## Step:  AIC=0.11
+## difference ~ male_percent + black_percent + native_percent + 
+##     other_race_percent + non_hispanic_percent + hispanic_percent + 
+##     unknown_ethnicity_percent
+## 
+##                             Df Sum of Sq    RSS     AIC
+## - other_race_percent         1    0.3863 34.859 -1.3548
+## - hispanic_percent           1    0.5658 35.038 -1.1083
+## - unknown_ethnicity_percent  1    1.2568 35.729 -0.1709
+## - native_percent             1    1.3136 35.786 -0.0946
+## <none>                                   34.473  0.1103
+## - black_percent              1    2.7815 37.254  1.8350
+## - non_hispanic_percent       1   10.3795 44.852 10.7441
+## - male_percent               1   17.4923 51.965 17.8096
+## 
+## Step:  AIC=-1.35
+## difference ~ male_percent + black_percent + native_percent + 
+##     non_hispanic_percent + hispanic_percent + unknown_ethnicity_percent
+## 
+##                             Df Sum of Sq    RSS     AIC
+## - hispanic_percent           1    0.5901 35.449 -2.5491
+## - unknown_ethnicity_percent  1    0.8706 35.730 -2.1707
+## - native_percent             1    1.2172 36.076 -1.7074
+## <none>                                   34.859 -1.3548
+## - black_percent              1    2.5541 37.413  0.0392
+## - non_hispanic_percent       1   10.0865 44.945  8.8438
+## - male_percent               1   17.5994 52.458 16.2633
+## 
+## Step:  AIC=-2.55
+## difference ~ male_percent + black_percent + native_percent + 
+##     non_hispanic_percent + unknown_ethnicity_percent
+## 
+##                             Df Sum of Sq    RSS     AIC
+## - native_percent             1    0.8686 36.318 -3.3871
+## - unknown_ethnicity_percent  1    1.4796 36.929 -2.5863
+## <none>                                   35.449 -2.5491
+## - black_percent              1    2.4089 37.858 -1.3934
+## - non_hispanic_percent       1   12.3487 47.798  9.7973
+## - male_percent               1   21.4808 56.930 18.1897
+## 
+## Step:  AIC=-3.39
+## difference ~ male_percent + black_percent + non_hispanic_percent + 
+##     unknown_ethnicity_percent
+## 
+##                             Df Sum of Sq    RSS     AIC
+## - unknown_ethnicity_percent  1    1.5231 37.841 -3.4152
+## <none>                                   36.318 -3.3871
+## - black_percent              1    2.1518 38.469 -2.6243
+## - non_hispanic_percent       1   12.2396 48.557  8.5540
+## - male_percent               1   20.9978 57.315 16.5137
+## 
+## Step:  AIC=-3.42
+## difference ~ male_percent + black_percent + non_hispanic_percent
+## 
+##                        Df Sum of Sq    RSS     AIC
+## <none>                              37.841 -3.4152
+## - black_percent         1    1.7294 39.570 -3.2701
+## - non_hispanic_percent  1   10.8276 48.668  6.6636
+## - male_percent          1   19.5447 57.385 14.5723
+\end{verbatim}
+
+Based on backwards AIC selection, we will use the model with
+male\_percent, black\_percent, non\_hispanic\_percent.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{covid_model }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{tidy }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{kable}\NormalTok{(}\DataTypeTok{digits =} \DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lrrrr@{}}
+\toprule
+term & estimate & std.error & statistic & p.value\tabularnewline
+\midrule
+\endhead
+(Intercept) & 3.830 & 0.976 & 3.925 & 0.000\tabularnewline
+male\_percent & -5.947 & 1.247 & -4.767 & 0.000\tabularnewline
+black\_percent & -2.553 & 1.800 & -1.418 & 0.163\tabularnewline
+non\_hispanic\_percent & 1.810 & 0.510 & 3.548 & 0.001\tabularnewline
+\bottomrule
+\end{longtable}
+
+To interpret this:
+
+\begin{itemize}
+\item
+  All else held constant, with every percentage increase in the amount
+  of males in a jail, we expect there to be a 6\% decrease in jail
+  population from Q1 to Q3.
+\item
+  All else held constant, with every percentage increase in the amount
+  of black people in a jail, we expect there to be a 3\% decrease in
+  jail population from Q1 to Q3.
+\item
+  All else held constant, with every percentage increase in the amount
+  of non-hispanic people in a jail, we expect there to be a 2\% increase
+  in jail population from Q1 to Q3.
+\end{itemize}
+
+Comments:
+
+\begin{itemize}
+\item
+  didn't check model conditions yet
+\item
+  LOOK AT DISCHARGE
+\item
+  This doesn't look at the ``after'' numbers for any of the predictor
+  variables (race, gender, ethnicity). Another thing we can do in the
+  future is analyze the difference between races over time.
+\item
+  are the race variables independent enough?
+\item
+  try looking at which race percentage decreases the most
+\item
+  look at bed increases or decreases
+\item
+  look at capacity changes
+\item
+  make helper functions to streamline the creation of other regression
+  models
+\end{itemize}
+
+Ideas:
+
+RQ: Is there a difference between the proportion of people released from
+COVID-19 between races? Gender?
+
+\begin{itemize}
+\item
+  ANova means to asess whether there's been a significant change due to
+  COVID-19
+\item
+  Look at Legalization, COVID-19, COVID-19 on Race
+\item
+  How do I research whether having a larger percentage of Black people
+  made jails more/less likely to release people?
+\item
+  Add judiciary political, national political, county political
+  (assembly member elected)
+\item
+  ggmap
+\end{itemize}
+
+\end{document}
