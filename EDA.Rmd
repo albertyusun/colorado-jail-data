@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Data Analysis, Colorado"
+title: "Colorado COVID-19 Likelihood of Releases"
 author: "Albert Sun"
 date: "9/30/2020"
 output:
@@ -13,6 +13,7 @@ library(patchwork)
 library(janitor)
 library(broom)
 library(knitr)
+library(here)
 ```
 
 ```{r global options, echo=FALSE}
@@ -20,10 +21,11 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
 ```{r read data}
-colorado <- read_csv("HB19-1297Data.csv") %>%
+colorado <- read_csv(here("data", "HB19-1297Data.csv")) %>%
   clean_names()
 
-pop <- read_csv("colorado-population.csv")
+pop <- read_csv(here("data", "colorado-population.csv")) %>%
+  clean_names()
 
 pop <- pop %>%
   filter(County != "Total") %>%

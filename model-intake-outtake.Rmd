@@ -1,0 +1,36 @@
+---
+title: "HB 19-1297: COVID-19 Intake vs. Outtake"
+output: pdf_document
+---
+
+```{r message=FALSE}
+library(tidyverse)
+library(patchwork)
+library(janitor)
+library(broom)
+library(knitr)
+library(here)
+```
+
+```{r global options, echo=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r read data}
+colorado <- read_csv(here("data", "HB19-1297Data.csv")) %>%
+  clean_names()
+
+pop <- read_csv(here("data", "colorado-population.csv")) %>%
+  clean_names()
+
+pop <- pop %>%
+  filter(county != "Total") %>%
+  mutate(county = str_sub(county, 2, -18))
+
+glimpse(colorado)
+```
+
+```{r}
+intake_outtake_model <- lm()
+```
+
