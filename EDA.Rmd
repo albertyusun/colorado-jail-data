@@ -20,20 +20,37 @@ library(here)
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
-```{r read data}
+# Data Loader
+
+```{r read colorado and pop}
 colorado <- read_csv(here("data", "HB19-1297Data.csv")) %>%
   clean_names()
 
 pop <- read_csv(here("data", "colorado-population.csv")) %>%
-  clean_names()
-
-pop <- pop %>%
-  filter(County != "Total") %>%
-  mutate(County = str_sub(County, 2, -18))
-
-
-glimpse(colorado)
+  clean_names() %>%
+  filter(county != "Total") %>%
+  mutate(county = str_sub(county, 2, -18))
 ```
+
+```{r read demographics}
+demo <- read_csv(here("data", "mit-demographics.csv")) %>%
+  filter(state == "Colorado") 
+
+demo <- demo %>%
+  mutate(liberal = factor(if_else(clinton16 - trump16 > 0, 1, 0))) %>%
+  mutate(ruralurban_cc = factor(ruralurban_cc)) %>%
+  mutate(ruralurban_cc = fct_collapse(ruralurban_cc, 
+                      metro = c("1", "2", "3"), 
+                      urban = c("4", "5", "6", "7"), 
+                      rural = c("8", "9"))) %>%
+  mutate(ruralurban_cc = fct_relevel(ruralurban_cc,
+                                     'rural',
+                                     'urban')) %>%
+  select(county, lesscollege_whites_pct, black_pct, rural_pct, ruralurban_cc, liberal)
+
+demo
+```
+
 
 # Overall Comments
 
@@ -96,6 +113,14 @@ colorado
 Missingness was generally reduced throughout the three quarters of jail data collection in 2020, possibly suggesting improvements in jail collection throughout this time period.
 
 # 4. EDA
+
+```{r}
+demo %>%
+  ggplot(aes(ruralurban_cc)) + 
+  geom_bar() + 
+  labs(title = "There's a normal distribution of counties per class")
+```
+
 
 ```{r}
 colorado %>%
@@ -208,33 +233,70 @@ colorado_num_inmates
 
 Pivot_wider;
 
-```{r}
+```{r pivot wider}
 colorado_num_inmates <- colorado_num_inmates %>% 
   pivot_wider(names_from = qtr, values_from = capacity:unknown_ethnicity) 
 ```
 
+```{r join the datasets}
+colorado_num_inmates <- colorado_num_inmates %>%
+  inner_join(pop, by = "county") %>%
+  inner_join(demo, by = "county")
+```
+
 ```{r}
-colorado_num_inmates <- inner_join(colorado_num_inmates, pop, by = c("county" = "County")) %>%
-  mutate(type = if_else(Population < 2500, "R", 
-                        if_else(Population < 50000, "UC", "UA")))
+colorado_num_inmates <- colorado_num_inmates %>%
+  mutate(difference = (total_3 - total_1)/total_1)
 
 colorado_num_inmates
 ```
 
+```{r standardizing pcts}
+colorado_num_percent <- colorado_num_inmates %>%
+  mutate(jail_male_pct = male_1 / total_1) %>%
+  mutate(jail_black_pct = black_1 / total_1) %>%
+  mutate(jail_hispanic_pct = hispanic_1 / total_1) %>%
+  select(county, difference, lesscollege_whites_pct, jail_male_pct, jail_black_pct, jail_hispanic_pct,
+         population, rural_pct, black_pct, liberal, ruralurban_cc)
+
+colorado_num_percent
+```
+
+# new model 
+
+```{r model fit}
+full <- lm(difference ~ liberal + 
+     lesscollege_whites_pct + 
+     population +
+     jail_male_pct + 
+     jail_black_pct + 
+     jail_hispanic_pct+ 
+     ruralurban_cc + 
+     black_pct,
+   data = colorado_num_percent)
+
+full %>%tidy
+```
+
+```{r backwards selection}
+int_only_model <- lm(difference ~ 1, data = colorado_num_percent)
+
+covid_model <- step(full, scope = formula(int_only_model), direction = "backward")
+```
+
+```{r}
+covid_model %>%
+  tidy
+```
 
 Standardize total, race, gender, ethnicity to percentages:
 
 ```{r}
 colorado_num_percent <- colorado_num_inmates %>%
   mutate(difference = (total_3 - total_1)/total_1) %>%
-  mutate(male_percent = male_1 / total_1) %>%
-  mutate(white_percent = white_1 / total_1) %>%
-  mutate(black_percent = black_1 / total_1) %>%
-  mutate(native_percent = native_american_1 / total_1) %>%
-  mutate(other_race_percent = other_race_1 / total_1) %>%
-  mutate(non_hispanic_percent = non_hispanic_1 / total_1) %>%
-  mutate(hispanic_percent = hispanic_1 / total_1) %>%
-  mutate(unknown_ethnicity_percent = unknown_ethnicity_1 / total_1) %>%
+  mutate(jail_male_pct = male_1 / total_1) %>%
+  mutate(jail_black_pct = black_1 / total_1) %>%
+  mutate(jail_hispanic_pct = hispanic_1 / total_1) %>%
   select(county, difference, male_percent, black_percent, hispanic_percent, type)
 
 colorado_num_percent
@@ -274,23 +336,23 @@ We are 95% confident that an Urbanized Cluster will result in between a 7.074% t
 ```{r}
 colorado_num <- colorado_num_inmates %>%
   mutate(difference = (total_3 - total_1)) %>%
-  mutate(male = male_1) %>%
-  mutate(white = white_1) %>%
-  mutate(black = black_1) %>%
-  mutate(native = native_american_1) %>%
-  mutate(other_race = other_race_1) %>%
-  mutate(non_hispanic = non_hispanic_1) %>%
-  mutate(hispanic = hispanic_1) %>%
-  mutate(unknown_ethnicity = unknown_ethnicity_1) %>%
+  rename(male = male_1) %>%
+  rename(white = white_1) %>%
+  rename(black = black_1) %>%
+  rename(native = native_american_1) %>%
+  rename(other_race = other_race_1) %>%
+  rename(non_hispanic = non_hispanic_1) %>%
+  rename(hispanic = hispanic_1) %>%
+  rename(unknown_ethnicity = unknown_ethnicity_1) %>%
   select(county, difference, male, black, hispanic)
 
 colorado_num
 ```
 
 ```{r merge}
-colorado_num <- inner_join(colorado_num, pop, by = c("county" = "County")) %>%
-  mutate(type = if_else(Population < 2500, "R", 
-                        if_else(Population < 50000, "UC", "UA")))
+colorado_num <- inner_join(colorado_num, pop, by = c("county" = "county")) %>%
+  mutate(type = if_else(population < 2500, "R", 
+                        if_else(population < 50000, "UC", "UA")))
 ```
 
 Urban or rural: https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html
