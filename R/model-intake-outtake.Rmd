@@ -1,0 +1,113 @@
+---
+title: "HB 19-1297: COVID-19 Intake vs. Outtake"
+output: pdf_document
+---
+
+```{r message=FALSE}
+library(tidyverse)
+library(patchwork)
+library(janitor)
+library(broom)
+library(knitr)
+library(here)
+```
+
+```{r global options, echo=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r read data}
+colorado <- read_csv(here("data", "HB19-1297Data.csv")) %>%
+  clean_names()
+
+pop <- read_csv(here("data", "colorado-population.csv")) %>%
+  clean_names()
+
+pop <- pop %>%
+  filter(county != "Total") %>%
+  mutate(county = str_sub(county, 2, -18))
+```
+
+```{r}
+colorado %>%
+  filter(measure == "Number of inmates") %>%
+  filter(qtr == 1 | qtr == 3)
+```
+
+
+# Pivot
+
+Pivot the table to create `colorado_change`, a horizontal table that where a county observation has these counts for each period: # total, deaths, bookings, releases, male, female, other gender, black, native american, other race, white, unknown race, hispanic/not/unknown ethnicity.
+
+```{r change betwen quarter 1 and 3}
+colorado_change <- colorado %>%
+  filter(measure == "Number of inmates") %>%
+  pivot_wider(id_cols = c(-not_available), names_from = qtr, values_from = c(total, deaths:releases, total:unknown_ethnicity)) 
+
+colorado_change
+```
+
+We're going to focus on the net population change and the total bookings and releases during this 2 quarter period (Janurary to March vs. March to June) of bookings and releases over time. 
+
+```{r}
+colorado_change <- colorado_change %>%
+  mutate(population_change = total_1 - total_2) %>%
+  mutate(bookings_change = bookings_1 - bookings_2) %>%
+  mutate(releases_change = releases_1 - releases_2) %>%
+  select(county, population_change, bookings_change, releases_change)
+```
+
+Add total population counts and Rural, UA, and UC
+
+ADD WHAT THESE MEAN
+
+```{r add total population counts}
+colorado_change <- inner_join(colorado_change, pop, by = c("county" = "county")) %>%
+  mutate(type = if_else(population < 2500, "R", 
+                        if_else(population < 50000, "UC", "UA")))
+
+colorado_change 
+```
+
+```{r}
+colorado_change %>% 
+  summarise(non_na_count = sum(!is.na(population_change)))
+```
+
+Only 33 of the counties have their intake and outtake counts.
+
+INVESTIGATE WHICH COUNTIES THESE ARE
+
+```{r}
+colorado_change <- colorado_change %>%
+  drop_na()
+
+colorado_change
+```
+
+
+# Model
+
+```{r}
+intake_model <- lm(population_change ~ bookings_change, data = colorado_change)
+
+intake_model %>%
+  tidy()
+```
+
+```{r}
+outtake_model <- lm(population_change ~ releases_change, data = colorado_change)
+
+outtake_model %>%
+  tidy()
+```
+
+It's clear that reduced bookings has a much more significant effect on population change than increased releases do. 
+
+Although the media in Colorado tend to highlight on increased releases, they still factor into population change less than releases do. 
+
+DO NEXT: 
+
+- check region variables
+
+- change population type variables
