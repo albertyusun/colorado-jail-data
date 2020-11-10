@@ -14,39 +14,52 @@ library(janitor)
 library(broom)
 library(knitr)
 library(here)
+library(rms)
+library(skimr)
 ```
 
 ```{r global options, echo=FALSE}
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
-# Data Loader
+# Background
+
+We wish to assess the quality of data collection and efficacy of using existing open-source jail databases to understand how jail populations respond to outside legislation and large trends, particularly disasters like COVID-19. The Colorado Jail Database is currently the most comprehensive, open source published, and catalogued state-wide jail database in the United States. Thus, we seek to conduct various statistical analyses on Colorado’s jail database to understand how similar data collections can motivate statistical conclusions in the future. If proven insightful, Colorado can be an effective model that other states can look towards to adopt a similar system of data collection.
+
+Some stakeholders in Colorado, and across the country, have attempted to reduce jail populations at the beginning of the outbreak. Colorado Governor Jared Polis signed an executive order relaxing the standards for early release in March in fear of the effects of excessive overcrowding in jails [7]. Jails who initially thought of expanding have halted their plans due to general decreases in jail populations [8]. Overall, Colorado has had a reported net decrease in jail population during the COVID-19 criss, which can immediately be seen on the Colorado dashboard itself. 
+
+## Research Question 
+
+What are the motivating factors or decisions that are correlated with a county jail decreasing its jail population at the outbreak of and during the COVID-19 pandemic? Which effect is greater, decreasing intake of new people or increasing outtake of new people? We seek to impute other demographic variables in a particular region (general population, political profile, etc) and to assess the nearby community’s relationship with the likelihood for releases.
+
+# Data Preparation
 
 ```{r read colorado and pop}
+#load colorado hb-19 1279
 colorado <- read_csv(here("data", "HB19-1297Data.csv")) %>%
   clean_names()
 
+#load colorado population data
 pop <- read_csv(here("data", "colorado-population.csv")) %>%
   clean_names() %>%
   filter(county != "Total") %>%
   mutate(county = str_sub(county, 2, -18))
-```
 
-```{r read demographics}
+#load colorado population demographics data
 demo <- read_csv(here("data", "mit-demographics.csv")) %>%
   filter(state == "Colorado") 
 
 demo <- demo %>%
   mutate(liberal = factor(if_else(clinton16 - trump16 > 0, 1, 0))) %>%
-  mutate(ruralurban_cc = factor(ruralurban_cc)) %>%
-  mutate(ruralurban_cc = fct_collapse(ruralurban_cc, 
+  mutate(urbanicity = factor(ruralurban_cc)) %>%
+  mutate(urbanicity = fct_collapse(urbanicity, 
                       metro = c("1", "2", "3"), 
                       urban = c("4", "5", "6", "7"), 
                       rural = c("8", "9"))) %>%
-  mutate(ruralurban_cc = fct_relevel(ruralurban_cc,
+  mutate(urbanicity = fct_relevel(urbanicity,
                                      'rural',
                                      'urban')) %>%
-  select(county, lesscollege_whites_pct, black_pct, rural_pct, ruralurban_cc, liberal)
+  select(county, lesscollege_whites_pct, black_pct, rural_pct, urbanicity, liberal)
 
 demo
 ```
@@ -116,7 +129,7 @@ Missingness was generally reduced throughout the three quarters of jail data col
 
 ```{r}
 demo %>%
-  ggplot(aes(ruralurban_cc)) + 
+  ggplot(aes(urbanicity)) + 
   geom_bar() + 
   labs(title = "There's a normal distribution of counties per class")
 ```
@@ -187,17 +200,7 @@ total_summary
 
 # 5. Linear Regression
 
-```{r}
-colorado_num_inmates <- colorado %>%
-  filter(measure == "Number of inmates")
-
-colorado_num_inmates %>%
-  filter(county == "Pitkin" | county == "Pueblo")
-```
-
-Since only two jails (Pitkin and Pueblo) don't offer information on ethnicity or race for the measure of number of total inmates in only one of their quarters, this data, focused on ethnicity counts per county, is mostly complete for modelling. We'll remove these numbers
-
-Let's focus on only quarter 1 and 3:
+Let's focus on only quarter 1 and 3 as before and after end points for COVID-19. 
 
 ```{r}
 colorado_num_inmates <- colorado %>%
@@ -257,7 +260,7 @@ colorado_num_percent <- colorado_num_inmates %>%
   mutate(jail_black_pct = black_1 / total_1) %>%
   mutate(jail_hispanic_pct = hispanic_1 / total_1) %>%
   select(county, difference, lesscollege_whites_pct, jail_male_pct, jail_black_pct, jail_hispanic_pct,
-         population, rural_pct, black_pct, liberal, ruralurban_cc)
+         population, rural_pct, black_pct, liberal, urbanicity)
 
 colorado_num_percent
 ```
@@ -271,7 +274,7 @@ full <- lm(difference ~ liberal +
      jail_male_pct + 
      jail_black_pct + 
      jail_hispanic_pct+ 
-     ruralurban_cc + 
+     urbanicity + 
      black_pct,
    data = colorado_num_percent)
 
@@ -284,31 +287,56 @@ int_only_model <- lm(difference ~ 1, data = colorado_num_percent)
 covid_model <- step(full, scope = formula(int_only_model), direction = "backward")
 ```
 
-```{r}
-covid_model %>%
-  tidy(conf.int = TRUE)
-```
-
 Based on backwards AIC selection, the two significant predictors for are the percent of males in a jail and whether a jail is in a rural, urban, or metropolitan area.
-
-A jail in an urban or metropolitan area is expected to decrease 1 percent more than a jail in a rural area, on average.
-
-For every one percent increase in male inmate in a jail, there is expected to be a 5 percent additional decrease in jail population, on average.
-
-
 
 ## Interaction Term
 
 ```{r nested F-test}
-reduced_model <- final_model
-full_model <- lm(unemployment_change ~ retail_avg + grocery_avg + workplaces_avg + retail_avg*grocery_avg, data = sample_data)
+reduced_model <- covid_model
+full_model <- lm(difference ~ 
+     jail_male_pct + 
+     urbanicity + 
+     jail_male_pct * urbanicity,
+   data = colorado_num_percent)
 
 anova(reduced_model, full_model) %>%
   tidy() %>%
   kable(digits = 3)
 ```
 
-## Model Conditions
+Since F-statistic is high and p-value is close to 0, the interaction effect between jail_male_pct * ruralurban_cc exists.
+
+# Model and Interpretations:
+
+## Model:
+
+```{r}
+full_model %>%
+  tidy(conf.int = TRUE) %>%
+  kable(digits = 3)
+```
+
+## Urbanicity: 
+
+Rural jails have failed to slow to decreasing their jail population during COVID-19 in comparison to urban/metropolitan areas:
+
+- A jail in an urban area is expected to decrease its population 12 percent more than a jail in a rural area, on average.
+
+- A jail in an metropolitan area is expected to decrease its population 13 percent more than a jail in a rural area, on average.
+
+## Male Population Percentage and its Interaction with Urbanicity: 
+
+Jails in rural and urban areas with a higher male population have a higher chance to decreasing their jail population. Jails with higher male populations in metropolitan areas have a higher chance of increasing their jail population. Specifically, 
+
+- For rural jails, for every one percent increase in male inmates, there is expected to be a 14 percent decrease in jail population between Jan to Sept 2020, on average.
+
+- For urban jails, for every one percent increase in male inmates, there is expected to be a 1 percent decrease in jail population between Jan to Sept 2020, on average.
+
+- For metropolitan jails, for every one percent increase in male inmates, there is expected to be a 1 percent increase in jail population between Jan to Sept 2020, on average. 
+
+# Model Conditions
+
+## Check Conditions
 
 ```{r conditions}
 model_aug <- augment(full_model) %>%
@@ -319,88 +347,25 @@ resid_fitted <- ggplot(data = model_aug, aes(x = .fitted, y = .resid)) +
   geom_hline(yintercept = 0, color = "red") +
   labs(x = "Predicted values",
     y = "Residual",
-    title = "Residuals vs. Predicted") +
-  theme_ipsum_rc()
+    title = "Residuals vs. Predicted") 
 
 resid_hist <- ggplot(data = model_aug, aes(x = .resid)) +
   geom_histogram(binwidth = 1) +
-  labs(x = "Residuals", title = "Dist. of Residuals") +
-  theme_ipsum_rc()
+  labs(x = "Residuals", title = "Dist. of Residuals") 
 
 resid_qq <- ggplot(data = model_aug, aes(sample = .resid)) +
   stat_qq() +
   stat_qq_line() +
-  labs(title = "Normal QQ-plot of residuals") +
-  theme_ipsum_rc()
+  labs(title = "Normal QQ-plot of residuals") 
 
 conditions_plot <- resid_fitted / (resid_hist + resid_qq)
+
+conditions_plot
 ```
 
-```{r save file}
-ggsave(here("output", "test-plot.png"), conditions_plot, units = "in", width = 850/100, height = 600/100)
-```
-
-```{r}
-#test_plot <- ggplot(mtcars, aes(mpg, wt)) +
-  #geom_point() +
-  #labs(x="Fuel efficiency (mpg)", y="Weight (tons)",
-       #title="Seminal ggplot2 scatterplot example",
-       #subtitle="A plot that is only useful for demonstration purposes",
-       #caption="Brought to you by the letter 'g'") +
-  #theme_ipsum_rc()
-```
-
-```{r save file}
-#ggsave("../output/test-plot.png", test_plot, units = "in", width = 850/100, height = 600/100 )
-```
-
-
-
-###
 
 
 ## Model Diagnostics
-
-**Leverage**
-
-```{r leverage threshold}
-#calculate threshold
-leverage_threshold <- 2*(3+1)/500
-leverage_threshold
-```
-
-```{r leverage v obs num}
-ggplot(data = model_aug, aes(x = obs_num, y = .hat)) + 
-  geom_point(alpha = 0.7) + 
-  geom_hline(yintercept = leverage_threshold, color = "red") +
-  labs(x = "Observation Number", y = "Leverage") +
-  geom_text(aes(label=ifelse(.hat > leverage_threshold,
-                             as.character(obs_num), "")), nudge_x = 4)
-```
-
-```{r obs w high leverage}
-model_aug %>% 
-  filter(.hat > leverage_threshold)
-```
-
-**Standardized residuals**
-
-```{r std resid}
-#scatterplot of std resid vs predicted
-ggplot(data = model_aug, aes(x = obs_num, y = .std.resid)) + 
-  geom_point(alpha = 0.7) + 
-  geom_hline(yintercept = 0, color = "red") +
-  geom_hline(linetype = "dotted", yintercept = c(-2,2)) +
-  geom_hline(linetype = "dotted", yintercept = c(-3,3), color = "red") +
-  labs(x = "Observation Number", y = "Standardized Residuals") +
-  geom_text(aes(label=ifelse(.std.resid > 3,
-                             as.character(obs_num), "")), nudge_x = 4)
-```
-
-```{r potential outliers}
-model_aug %>% 
-  filter(abs(.std.resid) > 3)
-```
 
 **Cook's distance**
 
@@ -415,102 +380,8 @@ ggplot(data = model_aug, aes(x = obs_num, y = .cooksd)) +
                              as.character(obs_num), "")), nudge_x = 4)
 ```
 
-**Multicollinearity**
+Jackson County (Observation 23), which has a super small county jail, is a high leverage county. This is because it increased from having 2 people to 17 people in its jail over COVID-19. It is an influential point, meaning that it has a large impact on the coefficients and standard errors used for inference. 
 
-```{r check multicollinearity}
-vif(full_model) %>%
-  tidy() %>%
-  kable(digits = 3)
-```
-
-All of the predictor variables have a VIF less than 10. Thus, we can say that none of the predictor variables in our model are correlated.
-
-## Full model with interaction term
-
-$$unemployment\_change = 1.266 - 0.73\times{retail\_avg} - 0.015\times{grocery\_avg} -0.035\times{workplaces\_avg} + 0.002\times{retail\_avg:grocery\_avg}$$
-
-```{r}
-tidy(full_model, conf.int = TRUE) %>% 
-  kable(digits = 3)
-```
-
-## Model comparison
-
-```{r}
-tidy(final_model) %>% 
-  kable(digits = 3)
-```
-
-```{r}
-glance(final_model) %>% 
-  select(AIC,BIC,r.squared,adj.r.squared)
-```
-
-```{r}
-tidy(full_model) %>% 
-  kable(digits = 3)
-``` 
-
-```{r}
-glance(full_model) %>%
-  select(AIC,BIC,r.squared,adj.r.squared)
-```
-
-```{r}
-model2 <- lm(unemployment_change ~ retail_avg*grocery_avg, data = sample_data)
-tidy(model2, conf.int = TRUE) %>% 
-  kable(digits = 3)
-```
-
-```{r}
-glance(model2) %>% 
-  select(AIC,BIC,r.squared,adj.r.squared)
-```
-
-## Interpretation (Edit)
-
-```{r}
-tidy(full_model) %>% 
-  kable(digits = 3)
-``` 
-
-The intercept is 28.454. This means that the expected median property value of owner-occupied homes for towns located in the suburbs of Boston with `r round(mean(real_estate$CRIM))` crime rate per capita, no residential land zoned for lots over 25,000 sq.ft, `r round(mean(real_estate$INDUS))`, does not bound river, with `r round(mean(real_estate$RM))` number of rooms per dwelling on average, no owner-occupied units built prior to 1940, `r round(mean(real_estate$DIS))` as weighted distance to five Boston employment centers, and pupil-teacher ratio of `r round(mean(real_estate$PTRATIO))` is around 28454 dollars.
-
-The estimated coefficient for `indus_cent:CHAS1` is 0.936. This means that for every one percentage point increase in the proportion of non-retail business acres per town, the median property value of owner-occupied homes for each town is expected to increase by 936 dollars, on average, for towns the bound the Charles River than towns that do not bound the Charles River, holding all other predictor variables constant.
-
-Based on our current output, we can see that both geographical and societal factors influence the property values in Boston suburbs. In particular, factors that indicate better environment and number of rooms in a house have a positive linear relationship with the property values in Boston suburbs. On the other hand, proportion of non-retail business, proportion of old buildings, distances to employment centers, and pupil-teacher ratio have negative linear relationships with the property values in Boston suburbs. This is roughly in line with what we expected since characteristics that indicate limited access to resources (e.g., high student-to-teacher ratio andd low average number of rooms per home) tend to have have lower median property values of owner-occupied homes.
+Because the goal of the model is explanation as opposed to prediction, it is worth keeping this point in the model.
 
 
-###
-
-Comments: 
-
-- didn't check model conditions yet
-
-- LOOK AT DISCHARGE
-
-- This doesn't look at the "after" numbers for any of the predictor variables (race, gender, ethnicity). Another thing we can do in the future is analyze the difference between races over time.
-
-- are the race variables independent enough? 
-
-- try looking at which race percentage decreases the most
-
-- look at bed increases or decreases
-
-- look at capacity changes
-
-- make helper functions to streamline the creation of other regression models
-
-Ideas:
-
-RQ: Is there a difference between the proportion of people released from COVID-19 between races? Gender?
-
-- ANova means to asess whether there's been a significant change due to COVID-19
-
-- Look at Legalization, COVID-19, COVID-19 on Race
-
-- How do I research whether having a larger percentage of Black people made jails more/less likely to release people?
-
-- Add judiciary political, national political, county political (assembly member elected)
-
-- ggmap
