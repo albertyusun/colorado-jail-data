@@ -307,6 +307,8 @@ Interpretation:
 
 # Future:
 
+- Try random forest classification
+
 - Collect and add data on political leanings of counties (judiciary, national, county)
 
 - ggmap() to create a spatial visualization to represent the counties that decreased the jail population counts the most
@@ -342,3 +344,15 @@ Interpretation:
 - Look at Legalization, COVID-19, COVID-19 on Race
 
 - How do I research whether having a larger percentage of Black people made jails more/less likely to release people?
+
+
+
+- Prison comparison
+
+- Look at pretrial vs. who's going to prison
+
+- political 
+
+- What covid questions to ask stakeheolders - qualitative healthcare 
+
+- work with Kalley on covid
