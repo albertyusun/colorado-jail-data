@@ -4,7 +4,7 @@ author: "Albert Sun"
 date: "9/30/2020"
 output:
   pdf_document: 
-    latex_engine: xelatex
+#    latex_engine: xelatex
 ---
 
 ```{r, setup, include=FALSE}

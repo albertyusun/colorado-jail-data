@@ -1,0 +1,100 @@
+---
+title: "second-sem-EDA"
+author: "Albert Sun"
+date: "2/5/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Libraries
+
+```{r}
+library(tidyverse)
+library(patchwork)
+library(janitor)
+library(broom)
+library(knitr)
+library(here)
+library(rms)
+library(skimr)
+```
+
+## Plot
+
+```{r}
+colorado <- read_csv(here("data", "HB19-1297Data.csv")) %>%
+  clean_names()
+
+demo <- read_csv(here("data", "mit-demographics.csv")) %>%
+  filter(state == "Colorado") 
+```
+
+```{r}
+demo <- demo %>%
+  mutate(liberal = factor(if_else(clinton16 - trump16 > 0, 1, 0))) %>%
+  mutate(urbanicity = factor(ruralurban_cc)) %>%
+  mutate(urbanicity = fct_collapse(urbanicity, 
+                      metro = c("1", "2", "3"), 
+                      urban = c("4", "5", "6", "7"), 
+                      rural = c("8", "9"))) %>%
+  mutate(urbanicity = fct_relevel(urbanicity,
+                                     'rural',
+                                     'urban'))
+
+demo
+```
+
+```{r}
+colorado_num_inmates <- colorado %>% 
+  filter(measure=='Number of inmates') %>%
+  group_by(county, qtr) %>%
+  arrange(county, qtr)
+```
+
+
+```{r}
+ggplot(data = colorado_num_inmates, aes(x = qtr, y = total, color = county)) +
+  geom_line()
+```
+
+```{r}
+how_urban <- demo %>% select(county, urbanicity)
+colorado_num_inmates <- merge(colorado_num_inmates, how_urban, by='county')
+colorado_num_inmates
+```
+```{r}
+urbanicity_df <- colorado_num_inmates %>%
+  group_by(urbanicity, qtr) %>%
+  summarise(total_population = sum(total))
+
+urbanicity_df
+```
+
+```{r}
+ggplot(data = urbanicity_df, aes(x = qtr, y = total_population, color = urbanicity)) +
+  geom_line()
+```
+
+Use this urbanicity
+https://www.colorado.gov/pacific/sites/default/files/DC_STI_HIVPrev_Colorado-County-Designations.pdf:
+
+```{r}
+designations <- read_csv(here("data", "colorado_designations.csv")) 
+
+designations
+```
+
+```{r}
+colorado %>% 
+  filter(measure == 'Number of inmates') %>%
+  select(county, qtr, total) %>%
+  left_join(designations, by = c("county" = "County")) %>%
+  group_by(Urbanicity, qtr) %>%
+  summarise(total_population = sum(total)) %>%
+  ggplot(aes(x = qtr, y = total_population, color = Urbanicity)) +
+  geom_line()
+```
+
+Rural counties and frontier counties faced a smaller percentage decrease at the beginning of COVID-19, suggesting that urban jails made a bigger, deliberate effort to de-densify jails than suburban jails. 
