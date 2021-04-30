@@ -1,7 +1,7 @@
 ---
-title: "Colorado COVID-19 Likelihood of Releases"
+title: "Rural jail responses to COVID-19 in Colorado"
 author: "Albert Sun"
-date: "9/30/2020"
+date: "4/30/2021"
 output:
   pdf_document: 
 #    latex_engine: xelatex
@@ -9,7 +9,7 @@ output:
 
 ```{r, setup, include=FALSE}
 knitr::opts_chunk$set(
-  warning=FALSE, fig.width = 6, fig.height = 3.5
+  warning=FALSE, fig.width = 6, fig.height = 3.5, warning=FALSE, message=FALSE, echo=FALSE
 )
 ```
 
@@ -24,65 +24,46 @@ library(rms)
 library(skimr)
 ```
 
-```{r global options, echo=FALSE}
-knitr::opts_chunk$set(warning=FALSE, message=FALSE)
-```
+# Motivation 
 
-# Table of contents:
-1. [Background](#Background)
+With overcrowding and characteristically unsanitary conditions, jails are uniquely positioned to spread infectious diseases such as COVID-19 in its quarters and to local communities. At the outbreak of the pandemic, jails across the country have made temporary (albeit significant) efforts to decrease their jail populations and slow down the intake of new inmates. Our project is interested in how Colorado’s data collection efforts can understand the state’s response to COVID-19 and what kind of disparities exist in the release of these jail inmates. 
 
-2. [Data Preparation](#Data Preparation)
+This study focuses on Colorado and its jail data collection. According to a study by the Prison Policy Institute, Colorado’s jail population decreased in greater rates than other state jail populations. [1] Our project is interested in how Colorado’s data collection efforts can understand the state’s response to COVID-19, how these statistics can motivate better public responses when facing future disasters, and what kind of disparities exist in the release of these jail inmates. 
 
-3. [Model](#Model)
+The Colorado Jail dataset was signed into existence by the bipartisan Colorado State House Bill 19-1297 in mid-2019, and the bill expanded previous and outdated efforts to catalogue Colorado jail data. The dataset is currently the most comprehensive, open-source published, and catalogued state-wide jail database in the United States. If proven useful in understanding the drivers of jail responses, the Colorado Jail Dataset can be a motivating example for other states to adopt a similar, modern system of data collection on their jails. 
 
-    A. [Model Selection](#Model Selection)
+# Background
 
-    B. [Model Interpretation](#Model Interpretation) 
+There is a strong political and organizational effort to make jail data surrounding COVID-19 transparent. For instance, the H.R.7983 (COVID-19 in Corrections Data Transparency Act) in the U.S. Congressional docket right now seeks to mandate public reports of data on “COVID-19 in Federal, State, and local correctional facilities” to be reported. [2] 
 
-    C. [Model Conditions](#Model Conditions) 
+Although the H.B. 19-1297 Colorado Jail Database does not include COVID-19 testing information, research using numbers from the HB 19-1297 database have already highlighted the dataset’s utility in understanding COVID-19 responses. Population data from existing HB 19-1297 data have already been used in aggregate counts for national jail population counts by studies done by the ACLU. [3] More data must be collected to fully document existing racial and ethnic disparities surrounding structural inequalities in the legal system. [4] 
 
-<a name="Background"></a>
+Other state-wide jail data collection efforts exist, but they are not nearly as comprehensive and public facing as Colorado’s efforts. Colorado’s data is published in Comma-separated values (.csv) format, allowing data researchers and the public to directly understand and run models on its data without needing to scrape it from a website. 
 
-# Background 
+This also encourages quick accessibility of the data. For California and Texas’ jail collection, research groups scraped and published the data periodically onto an unofficial data-sharing website called openICPSR [5][6]. Because Colorado’s jail data is immediately published, it saves data researchers time in not needing to scrape, and it allows them to verify their data by receiving it from an official, governmental source. This improves reproducibility in data analyses, which is important for informed conversations about the statistical data surrounding Colorado jails. This allows the public to analyze the most recent data coming from their jails during a possible disaster like COVID-19 pandemic right in front of them.
 
-## Motivation
+Some stakeholders in Colorado and across the country, have attempted to reduce jail populations at the beginning of the outbreak. Colorado Governor Jared Polis signed an executive order relaxing the standards for early release in March in fear of the effects of excessive overcrowding in jails [7]. Jails who initially thought of expanding have halted their plans due to general decreases in jail populations [8]. Overall, Colorado has reported a net decrease in jail population during the COVID-19 crisis. 
 
-The Colorado Jail Database, instituted by Colorado House Bill 19-1297, is currently the most comprehensive, open source published, and catalogued state-wide jail database in the United States. HB19-1297 was a bipartisan bill sponsored by State Representatives Michael Weissman (D) and Hugh McKean (R). Supported by ACLU-Colorado, HB19-1297 was signed May of 2019. HB19-1297 expanded the information that jail keepers must submit to the Division of Criminal Justice, mandating that unless data is submitted quarterly, jail keepers could be subject to a $500 fine. 
+# Research Question
 
-Thus, we seek to conduct various statistical analyses on Colorado’s jail database to understand how similar data collections can motivate statistical conclusions in the future. If proven insightful, Colorado's HB 19-1297 Jail Data Collection legislation can be an effective model that other states can look towards to adopt a similar system of data collection.
-
-Our goal is to focus on COVID-19 outcomes for jail population numbers. Public officials in Colorado have attempted to reduce jail populations at the beginning of the outbreak. Governor Jared Polis signed an executive order relaxing the standards for early release in March in fear of the effects of excessive overcrowding in jails. Jails that initially had expansion plans have halted their plans due to general COVID-19 decreases in jail populations. Overall, it is clear that Colorado has had a reported net decrease in jail population during the COVID-19 crisis, albeit slow and unsatisfactory.
-
-## Research Question 
-
-What demographic or jail information is correlated with a county jail decreasing its jail population at the outbreak of and during the COVID-19 pandemic? 
+What factors are correlated with a county jail decreasing its jail population at the outbreak of and during the COVID-19 pandemic? 
 
 ## Data Comments
 
-**HB 19-1297:**
+Colorado has a uniform system for collecting jail data in the state, known as the HB19-1297 Jail Data Collection. [9] This dashboard is run by the Colorado Department of Corrections within the Division of Criminal Justice. HB19-1297 was a bipartisan bill primarily sponsored by State Representatives Michael Weissman (D) and Hugh McKean (R). [10][11] HB19-1297 was signed May of 2019. HB19-1297 expanded the information that jail keepers must submit to the Division of Criminal Justice, mandating that unless data is submitted quarterly, jail keepers could be subject to a $500 fine. 
+The public and published HB 19-1297 dataset represents 3 collection periods in 2020, split up into yearly quarters. Q1 was in January, Q2 was in April, Q3 was in July. A more-frequent periodic collection of data lends the dataset to good time series analysis, because we can better see the effects of policies or huge events, like COVID-19 over time. 
 
-The public and published HB 19-1297 dataset represents 3 collection periods in 2020, split up into yearly quarters. Q1 was Jan-Mar, Q2 was Apr-Jun, Q3 was Jul-Aug.
-
-The 23 columns represent variables: the quarter, the year, county jail, jail management system, etc.
-
-The 2280 rows generally reflect specific jail information per each quarter; however, the reason why there are 2280 rows instead of 152 rows (the number of jails times three quarters in Colorado) is because each jail has 15 rows separated into different areas of measurement, i.e. "Number of inmates", "Sentenced", etc. 
-
-Source: https://ors.colorado.gov/ors-coll-jaildata
-
-**MIT Election Lab**
-
-The data file election-context-2018.csv contains demographic and past election data at the county level.
-
-Source: https://github.com/MEDSL/2018-elections-unoffical/blob/master/election-context-2018.md
+The HB 19-1297 data collection has the following variables: population count, gender, race, Hispanic, capacity, beds, deaths, bookings, releases. It splits up each of these counts based on different metrics, specifically: total number of inmates, sentenced, unsentenced and hold, unsentenced and no hold, unsentenced and no hold felonies, unsentenced and no hold misdemeanors, municipal charge, administrative segregation, competency evaluation, average daily population, average LOS felonies, Felony Releases, Average LOS Misdemeanors, Misdemeanor Releases, and Homeless. 
+The data is mostly complete. Only 1 county jail out of all 53 county jails in Colorado didn’t submit data for the last quarter. Given that the HB 19-1297 jail dataset collects a lot of data surrounding race and different measures, only 19.649% of the data is missing. However, overall, all jails have submitted overall population counts and race counts. 
+Finally, we seek to impute demographic variables in a particular region (general population, political profile, etc.) from the MIT Election Lab Dataset, allowing us to investigate different regional factors in the likelihood of releases in jails. [13] 
 
 # Data Preparation <a name="Data Preparation"></a>
-
-## Data Loading
 
 ```{r read colorado and pop}
 #load colorado hb-19 1279
 colorado <- read_csv(here("data", "HB19-1297Data.csv")) %>%
-  clean_names()
+  clean_names() %>% 
+  filter(qtr != 4)
 
 #load colorado population demographics data
 demo <- read_csv(here("data", "mit-demographics.csv")) %>%
@@ -114,7 +95,7 @@ colorado %>%
   group_by(not_available) %>%
   arrange(-n) %>%
   ungroup %>%
-  slice(1:10)
+  slice(1:10) %>% kable
 ```
 
 Most of the data that is missing is that a jail's JMS (Jail Management System) might not break down types of sentences by gender, race, or ethnicity. When conducting data analysis on race and gender for some particular measures, it will be a good idea to remove these rows, or at least account for them. 
@@ -123,39 +104,28 @@ Out of 2280 rows, there are `r 2280 - 1792` (2280-1792) rows with some sort of `
 
 This means that `r 448 / 2280 * 100`% of the data has some sort of `not_available` message to it, which is relatively low.
 
-## Fix Type 
-
-```{r}
+```{r fix type}
 colorado <- colorado %>%
   mutate(qtr = factor(qtr))
 ```
 
-## Investigate Missingness
-
-```{r}
+```{r investigate missingness}
 colorado <- colorado %>% 
   mutate(isNA = !is.na(not_available)) 
 
 colorado %>%
   count(qtr, isNA) %>%
-  filter(isNA == TRUE)
+  filter(isNA == TRUE) %>%
+  kable
 ```
 
-Missingness was generally reduced throughout the three quarters of jail data collection in 2020, possibly suggesting improvements in jail collection throughout this time period.
+Missingness was generally reduced throughout the four quarters of jail data collection in 2020, possibly suggesting improvements in jail collection throughout this time period.
 
-## Merging Datasets
-
-Let's focus on only quarter 1 and 3 as before and after end points for COVID-19. This will allow us to adjudicate the full response to the ongoing COVID-19 virus.
-
-```{r}
+```{r focus on q 1 and 3 before and afte covid}
 colorado_num_inmates <- colorado %>%
   filter(measure == "Number of inmates") %>%
-  filter(qtr == 1 | qtr == 3)
-
-colorado_num_inmates
+  filter(qtr == 1 | qtr == 3) 
 ```
-
-Remove 4 jails that don't have both first and third quarter: Grand, Huerfano, Las Animas, Saguache. Remove unneeded variables. Merge unknown and other race.
 
 ```{r}
 colorado_num_inmates <- colorado_num_inmates %>%
@@ -168,24 +138,23 @@ colorado_num_inmates <- colorado_num_inmates %>%
             bookings, releases)) %>%
   mutate(other_race = unknown_race + other_race) %>%
   select(-c(unknown_race)) %>%
-  arrange(county)
+  arrange(county) 
+# Remove 4 jails that don't have both first and third quarter: Grand, Huerfano, Las Animas, Saguache. Remove unneeded variables. Merge unknown and other race.
 ```
-
-Pivot the dataset wider to treat each jail as its own observation, with the ability to create new columns representing the changes in population counts.
 
 ```{r pivot wider}
 colorado_num_inmates <- colorado_num_inmates %>% 
   pivot_wider(names_from = qtr, values_from = capacity:unknown_ethnicity) 
-```
 
-Join the Colorado HB 19-1297, population, and MIT Election Lab Aggregated Demographic datasets.
+#Pivot the dataset wider to treat each jail as its own observation, with the ability to create new columns representing the changes in population counts.
+```
 
 ```{r join the datasets}
 colorado_num_inmates <- colorado_num_inmates %>%
   inner_join(demo, by = "county")
-```
 
-Create new dataset called colorado_num_percent, which transforms all the variables into percent changes in order to standardize the numbers across different sizes of jails. 
+#Join the Colorado HB 19-1297, population, and MIT Election Lab Aggregated Demographic datasets.
+```
 
 ```{r standardizing pcts}
 colorado_num_percent <- colorado_num_inmates %>%
@@ -197,12 +166,13 @@ colorado_num_percent <- colorado_num_inmates %>%
          jail_hispanic_pct, population, rural_pct, black_pct, liberal,
          urbanicity)
 
-colorado_num_percent
+#Create new dataset called colorado_num_percent, which transforms all the variables into percent changes in order to standardize the numbers across different sizes of jails. 
+
 ```
 
 ## Exploratory Data Analysis
 
-General Summary Statistics:
+The percent change in population numbers for individual jails in Colorado has a unimodal normal distribution. It has a slight right-skew with one significant outlier at +7.5% difference. This means that most jails decreased their jail population, with an average of -0.1642023% difference in jail population:
 
 ```{r}
 colorado_num_percent %>%
@@ -214,70 +184,30 @@ colorado_num_percent %>%
          )
 ```
 
-The percent change in population numbers has a unimodal normal distribution. It has a slight right-skew with one significant outlier at +7.5% difference.
+Jail population visibly decreases significantly in metropolitan jails, but doesn't visibly decrease significantly in rural jails during COVID-19. 
 
 ```{r}
-demo %>%
-  mutate(urbanicity = fct_relevel(urbanicity, "urban")) %>%
-  ggplot(aes(urbanicity)) + 
-  geom_bar() + 
-  labs(title = "Distribution of counties per urbanicity",
-       y = "Count", 
-       x = "Urbanicity")
+quarter_labs <- c("Q1 (Jan 1, 2020)", "Q2 (Apr 1, 2020)", "Q3 (Jul 2020)", "Q4 (Oct 2020)")
+date_labs <- c("1/1/2020", "4/1/2020", "7/1/2020", "10/1/2020")
+
+urbanicity_df <- read_csv(here("data", "urbanicity_df.csv")) 
+
+urbanicity_df$urbanicity <- factor(urbanicity_df$urbanicity, levels = c("metro", "urban", "rural"))
+
+ggplot(data = urbanicity_df, aes(x = factor(qtr), y = total_population, color = urbanicity, group = urbanicity)) +
+  geom_line(size=2) + 
+  ggtitle("Jail Population by Urbanicity in Colorado") + 
+  scale_x_discrete(labels=date_labs) +
+  theme_gray() + 
+  theme(axis.title.y=element_blank(),
+        axis.title.x=element_blank()) 
 ```
 
-```{r}
-colorado %>%
-  mutate(jms = str_replace(jms, "Eforce", "E-Force")) %>%
-  mutate(jms = str_replace(jms, "eForce", "E-Force")) %>%
-  count(jms) %>%
-  arrange(-n) %>%
-  mutate(n = n / 5) %>%
-  slice(1:5) %>%
-  ggplot(aes(x = reorder(jms, -n), y = n)) + 
-  geom_bar(stat = "identity") + 
-  labs(x = "Jail Management System",
-       y = "Count",
-       title = "Top 5 utilized jail management systems in Colorado")
-```
+# Method
 
-The top utilized jail management system in Colorado are E-Force, Spillman, New World, Crimestar, and Tiburon.
+After cleaning our data, we plan on using a few different types of regression models to fit our data and hopefully understand drivers of reduced jail intake/outtake rates during COVID-19. We find that the insights from regression models are highly accessible to the public. Regression analysis can be used to forecast, create time series models, and find the causal effect relationship between variables (given enough variables at hand). 
 
-```{r}
-colorado %>%
-  arrange(qtr) %>%
-  group_by(qtr) %>%
-  summarise(total = sum(total)) %>%
-  ggplot(aes(x = qtr, y = total)) + 
-  geom_bar(stat = "identity") + 
-  labs(title = "Total Population in Colorado Jails at first three Quarters of 2020",
-       x = "Quarter",
-       y = "Population #")
-```
-
-As you can see, Colorado jail population has significantly reduced during COVID-19. 
-
-```{r Jail Population Distribution}
-# facet version
-
-colorado_dist <- colorado %>%
-  group_by(county, qtr) %>%
-  summarise(total = sum(total))
-
-colorado_dist %>%
-  ggplot(aes(x = total)) + 
-  geom_histogram(bins = 50) + 
-  facet_grid(qtr ~ .) + 
-  labs(title = "Distribution of Colorado Jail Size (by Population) in different
-Quarters",
-       y = "Count",
-       x = "Jail Population")
-```
-
-The population per jail throughout Colorado is Unimodal, right-skewed distribution with significant outliers on the right of the
-graph.
-
-# Model <a name="Model"></a>
+We plan on using linear regression and logistic regression to understand the variables (with special focus to race, gender, and other demographic variables) that may have motivated jail population rates to decrease.
 
 ## Model Selection <a name="Model Selection"></a>
 
@@ -346,7 +276,7 @@ anova(reduced_model, full_model) %>%
 
 Since F-statistic is high and p-value is close to 0, the interaction effect between jail_male_pct * ruralurban_cc is statistically significant. 
 
-## Model Interpretations: <a name="Model Interpretations"></a>
+# Results 
 
 ```{r}
 full_model %>%
@@ -372,7 +302,49 @@ Jails in rural and urban areas with a higher male population have a higher chanc
 
 - For metropolitan jails, for every one percent increase in male inmates, there is expected to be a 1 percent increase in jail population between Jan to Sept 2020, on average. 
 
-## Model Conditions: 
+# Discussion
+
+Our finding that rural jails are more resilient to the COVID-19 pandemic fits with larger national trends. According to the Vera Institute of Justice, there’s been a "jail boom" in rural incarceration rates across the country where rural county budgets are allocating more money toward building and expanding new jails instead of housing, transportation, and public health [14]. Further research should be done to see whether the same fiscal incentives that are driving the jail boom are primary causes to our findings about why rural jail populations were so resilient to COVID-19.
+
+Furthermore, this type of analysis would not be possible in North Carolina, because North Carolina doesn't have a regularly updated jail database. Existing national sources of data such as the BJS Census of Jails or Annual Survey are either sparsely collected (every 7 years) or incomplete. Furthermore, the data collection frequency for national data collections by the Bureau of Justice Statistics is at most yearly; a statewide jail database in North Carolina structured like the HB19-1297 Dataset can collect data more frequently. Frequent data collection and information about inmates' race, gender, ethnicity unique to the HB19-1297 Dataset will allow us to fit a more complete regression model to understand the correlation between urbanicity and willingness to reduce population. 
+
+In terms of next steps, the statistical model employed in this report, regression modeling, only examines correlation, not causation. As such, in order to better understand why rural jail populations are more resilient, other research techniques should be employed. Qualitative researchers can interview rural jail stakeholders to better understand the response to COVID-19, and whether rural jail incentives came into play. Qualitative researchers and statisticians can use the existing dataset to employ popular causal inference techniques, such as the Structural Causal Model [15]. Additionally, researchers should use this technique to examine whether rural jail incarceration rates were resilient in other states as well during COVID-19.  
+
+# References
+
+[1] Ollove, Michael. How COVID-19 in Jails and Prisons Threatens Nearby Communities. https://pew.org/3eMrIM1. Accessed 27 Jan. 2021.
+
+[2] Pressley, Ayanna. Text - H.R.7983 - 116th Congress (2019-2020): COVID–19 in Corrections Data Transparency Act. 7 Aug. 2020, https://www.congress.gov/bill/116th-congress/house-bill/7983/text.
+
+[3] “COVID-19 Model Finds 100,000 More Deaths Than Current Estimates, Due to Failures to Reduce Jails.” ACLU. 1 Aug. 2020, https://www.aclu.org/sites/default/files/field_document/aclu_covid19-jail-report_2020-8_1.pdf
+
+[4] Haskell-Hoehl, Micah. “Policymakers Must Lift the Veil on COVID-19 in Jails and Prisons.” Vera Institute of Justice. 2 Sept. 2020, https://www.vera.org/blog/covid-19-1/policymakers-must-lift-the-veil-on-covid-19-in-jails-and-prisons
+
+[5] Kaplan, Jacob. California Jail Profile Survey 1995-2020. Ann Arbor, MI: Inter-university Consortium for Political and Social Research [distributor], 2020-06-29. https://doi.org/10.3886/E104560V6
+
+[6] Kaplan, Jacob. Texas Commission on Jail Standards Data 1992-2017. Ann Arbor, MI: Inter-university Consortium for Political and Social Research [distributor], 2018-07-14. https://doi.org/10.3886/E104643V1
+
+[7] Polis, Jard. D 2020 016 Colorado Executive Order. State of Colorado Governor. 25 Mar. 2020, https://drive.google.com/file/d/1I9dyGYreaeakjXq0ME0fDTcTEvQCtMr4/view
+
+[8] Ashby, Charles. COVID forces changes to jail, making expansion unneeded. The Daily Sentinel. 6 Sep. 2020, https://www.gjsentinel.com/news/western_colorado/covid-forces-changes-to-jail-making-expansion-unneeded/article_33242d3a-eed4-11ea-b079-af5d33237325.html 
+
+[9] HB19-1297 Jail Data Dashboard. https://cdpsdocs.state.co.us/ors/Data/Data_Instruments/HB1297/Dashboard/HB19-1297v2.html 
+
+[10] HB19-1297 Jail Capacity Data Collection Bill Text. https://leg.colorado.gov/bills/hb19-1297 
+
+[11] “Who’s in Colorado’s County Jails? Data-Collection Legislation Would Provide Answers. | Colorado Freedom of Information Coalition.” Colorado Freedom of Information Coalition, 26 Apr. 2019, coloradofoic.org/whos-in-colorados-county-jails-data-collection-legislation-would-provide-answers/. Accessed 27 Jan. 2021.
+
+[12] “Data | MIT Election Lab.” Mit.edu, 14 Jan. 2021, electionlab.mit.edu/data. Accessed 27 Jan. 2021.
+
+[13] “BJS Data Collection.” Bureau of Justice Statistics. https://www.bjs.gov/index.cfm?ty=dcdetail&iid=255. Accessed April 1, 2021.
+
+[14] Heiss, Jasmine. "Why reimagining safety looks different in rural America." Washington Post, April 29, 2021. Accessed April 30, 2021. https://www.washingtonpost.com/opinions/2021/04/29/reimagine-safety-cities-rural-communities/?utm_campaign=wp_opinions&utm_source=twitter&utm_medium=social
+
+[15] Pearl, Judea. "Causal inference in statistics: An overview", September 2009. UCLA Computer Science Department. https://ftp.cs.ucla.edu/pub/stat_ser/r350.pdf
+
+## Appendix
+
+### 4 Conditions for Linear Regression:
 
 ```{r conditions}
 model_aug <- augment(full_model) %>%
@@ -399,35 +371,12 @@ conditions_plot <- resid_fitted / (resid_hist + resid_qq)
 conditions_plot
 ```
 
-### 4 Conditions for Linear Regression:
+To ensure the accuracy of the model, we looked at four different conditions for linear regression: 
 
 1. Linearity: Partially Satisfied - Although there is no distinguishable pattern in the residuals vs. predicted plot, the points are generally scattered. There seem to be some high leverage points that are worth investigating. However, lee-way will be given given the small number of observations. Overall, the residuals are randomly scattered.
 
 2. Normality: Satisfied - the points genearlly fall along a straight diagonal line on the normal quantile plot. 
 
-3. Constant Variance: Satisfied -  the vertical spread of the residuals remains relatively constant across the plot.
+3. Constant Variance: Satisfied - the vertical spread of the residuals remains relatively constant across the plot.
 
-4. Independence: Satisfied - The error for one county does not tell us anything about the error for another county. We also put urbanicity of the counties as one of the variables, which avoids some of the problems of spatial collinarity/correlation. However, in order to improve this model, we can add a "region" variable to account for the locations of the counties in the state of Colorado. 
-
-### Model Diagnostics
-
-**Cook's distance**
-
-Let's investigate those possible high-leverage points:
-
-```{r cooks d}
-#scatterplot of cook's d vs obs num
-ggplot(data = model_aug, aes(x = obs_num, y = .cooksd)) + 
-  geom_point(alpha = 0.7) + 
-  geom_hline(yintercept = 1, color = "red") +
-  geom_hline(linetype = "dotted", yintercept = 0.5, color = "red") +
-  labs(x = "Observation Number", y = "Cook's D") +
-  geom_text(aes(label=ifelse(.cooksd > 1,
-                             as.character(obs_num), "")), nudge_x = 4)
-```
-
-Jackson County (Observation 23), which has a super small county jail, is a high leverage county. This is because it increased from having 2 people to 17 people in its jail over COVID-19. It is an influential point, meaning that it has a large impact on the coefficients and standard errors used for inference. 
-
-Because the goal of the model is explanation as opposed to prediction, it is worth keeping this point in the model.
-
-
+4. Independence: Satisfied - The error for one county does not tell us anything about the error for another county. We also put urbanicity of the counties as one of the variables, which avoids some of the problems of spatial collinearity/correlation. However, in order to improve this model, we can add a "region" variable to account for the locations of the counties in the state of Colorado. 
